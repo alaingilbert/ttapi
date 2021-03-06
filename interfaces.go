@@ -37,7 +37,7 @@ type IBot interface {
 	GetProfile(userID string) (GetProfileRes, error)
 	GetUserID(name string) (string, error)
 	SetStatus(status string) error
-	modifyLaptop(laptop string) error
+	ModifyLaptop(laptop string) error
 	ModifyName(newName string) error
 	PlaylistAdd(songID, playlistName string, idx int) error
 	PlaylistAll(playlistName string) (PlaylistAllRes, error)
