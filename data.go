@@ -467,7 +467,7 @@ type DeregisteredEvt struct {
 		Created float64 `json:"created"`
 		Laptop  string  `json:"laptop"`
 		Userid  string  `json:"userid"`
-		ACL     int     `json:"acl"`
+		ACL     float64 `json:"acl"`
 		Fans    int     `json:"fans"`
 		Points  int     `json:"points"`
 		Images  struct {
@@ -536,6 +536,7 @@ type BootedUserEvt struct {
 
 // {"djs": {"1": "604130fb3f4bfc001809d428", "0": "6041b4a8c2dbd9001be77391"}, "success": true, "command": "add_dj", "user": [{"fanofs": 7, "name": "agilbert", "created": 1614885115.13613, "laptop": "mac", "userid": "604130fb3f4bfc001809d428", "acl": 0, "fans": 13, "points": 209, "images": {"fullfront": "/roommanager_assets/avatars/8/fullfront.png", "headfront": "/roommanager_assets/avatars/8/headfront.png"}, "_id": "604130fb3f4bfc001809d428", "avatarid": 8, "registered": 1614885141.040958}], "roomid": "6041625e3f4bfc001c3a4ab3", "placements": []}
 
+// DjEvt ...
 type DjEvt struct {
 	Djs struct {
 		Num0 string `json:"0"`
@@ -552,7 +553,7 @@ type DjEvt struct {
 		Created float64 `json:"created"`
 		Laptop  string  `json:"laptop"`
 		Userid  string  `json:"userid"`
-		ACL     int     `json:"acl"`
+		ACL     float64 `json:"acl"`
 		Fans    int     `json:"fans"`
 		Points  int     `json:"points"`
 		Images  struct {
