@@ -1,18 +1,28 @@
 package ttapi
 
-
 const (
 	wsOrigin   = "https://turntable.fm"
 	wssURL     = "wss://chat1.turntable.fm:8080/socket.io/websocket"
 	wsProtocol = ""
 
-	endsong     = "endsong"
-	newsong     = "newsong"
-	nosong      = "nosong"
-	pmmed       = "pmmed"
-	registered  = "registered"
-	roomChanged = "roomChanged"
-	speak       = "speak"
+	bootedUser   = "booted_user"
+	deregistered = "deregistered"
+	endsong      = "endsong"
+	escort       = "escort"
+	newModerator = "new_moderator"
+	newsong      = "newsong"
+	nosong       = "nosong"
+	pmmed        = "pmmed"
+	ready        = "ready"
+	registered   = "registered"
+	addDJ        = "add_dj"
+	remDJ        = "rem_dj"
+	remModerator = "rem_moderator"
+	roomChanged  = "roomChanged"
+	snagged      = "snagged"
+	speak        = "speak"
+	updateUser   = "update_user"
+	updateVotes  = "update_votes"
 
 	pmSend               = "pm.send"
 	presenceUpdate       = "presence.update"

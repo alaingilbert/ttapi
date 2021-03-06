@@ -128,6 +128,7 @@ func (b *Bot) processMessage(msg []byte) {
 		return
 	}
 	if bytes.Equal(msg, []byte("~m~10~m~no_session")) {
+		b.emit(ready, nil)
 		SGo(func() {
 			_ = b.updatePresence()
 			_ = b.userModify(H{"laptop": b.laptop})
@@ -185,11 +186,18 @@ func (b *Bot) processHeartbeat(data []byte) {
 func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{}) {
 	if command, ok := jsonHashMap["command"].(string); ok {
 		switch command {
+		case remDJ:
+			if modID, ok := jsonHashMap["modid"].(string); ok {
+				if modID != "" {
+					b.emit(escort, rawJson)
+				}
+			}
+			break
 		case nosong:
 			b.CurrentDjID = ""
 			b.CurrentSongID = ""
 			b.emit(endsong, b.tmpSong)
-			b.emit(nosong, jsonHashMap)
+			b.emit(nosong, rawJson)
 			break
 		case newsong:
 			if b.CurrentSongID != "" {
@@ -201,6 +209,25 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 				b.setTmpSong(m)
 			}
 			b.emit(newsong, rawJson)
+			break
+		case updateVotes:
+			if b.tmpSong != nil {
+				ups := safeMapPath(jsonHashMap, "room.metadata.upvotes")
+				downs := safeMapPath(jsonHashMap, "room.metadata.downvotes")
+				ls := safeMapPath(jsonHashMap, "room.metadata.listeners")
+				if _, ok := b.tmpSong["room"].(map[string]interface{}); ok {
+					if _, ok := b.tmpSong["room"].(map[string]interface{})["metadata"].(map[string]interface{}); ok {
+						b.tmpSong["room"].(map[string]interface{})["metadata"].(map[string]interface{})["upvotes"] = ups
+						b.tmpSong["room"].(map[string]interface{})["metadata"].(map[string]interface{})["downvotes"] = downs
+						b.tmpSong["room"].(map[string]interface{})["metadata"].(map[string]interface{})["listeners"] = ls
+					} else {
+						b.tmpSong["room"].(map[string]interface{})["metadata"] = map[string]interface{}{"upvotes": ups, "downvotes": downs, "listeners": ls}
+					}
+				} else {
+					b.tmpSong["room"] = map[string]interface{}{"metadata": map[string]interface{}{"upvotes": ups, "downvotes": downs, "listeners": ls}}
+				}
+			}
+			b.emit(updateVotes, rawJson)
 			break
 		default:
 			b.emit(command, rawJson)
@@ -387,6 +414,46 @@ func (b *Bot) emit(cmd string, data interface{}) {
 						var payload NewSongEvt
 						_ = json.Unmarshal(dataBy, &payload)
 						SGo(func() { clb.(func(NewSongEvt))(payload) })
+					} else if cmd == nosong {
+						var payload NoSongEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(NoSongEvt))(payload) })
+					} else if cmd == snagged {
+						var payload SnaggedEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(SnaggedEvt))(payload) })
+					} else if cmd == bootedUser {
+						var payload BootedUserEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(BootedUserEvt))(payload) })
+					} else if cmd == updateVotes {
+						var payload UpdateVotesEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(UpdateVotesEvt))(payload) })
+					} else if cmd == deregistered {
+						var payload DeregisteredEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(DeregisteredEvt))(payload) })
+					} else if cmd == addDJ {
+						var payload AddDJEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(AddDJEvt))(payload) })
+					} else if cmd == remDJ {
+						var payload RemDJEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(RemDJEvt))(payload) })
+					} else if cmd == escort {
+						var payload EscortEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(EscortEvt))(payload) })
+					} else if cmd == newModerator {
+						var payload NewModeratorEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(NewModeratorEvt))(payload) })
+					} else if cmd == remModerator {
+						var payload RemModeratorEvt
+						_ = json.Unmarshal(dataBy, &payload)
+						SGo(func() { clb.(func(RemModeratorEvt))(payload) })
 					} else if cmd == speak {
 						var payload SpeakEvt
 						_ = json.Unmarshal(dataBy, &payload)
@@ -399,6 +466,14 @@ func (b *Bot) emit(cmd string, data interface{}) {
 			} else if roomInfo, ok := data.(RoomInfoRes); ok {
 				if cmd == roomChanged {
 					SGo(func() { clb.(func(RoomInfoRes))(roomInfo) })
+				}
+			} else if m, ok := data.(H); ok {
+				if cmd == endsong {
+					SGo(func() { clb.(func(H))(m) })
+				}
+			} else {
+				if cmd == ready {
+					SGo(func() { clb.(func())() })
 				}
 			}
 		}(clb)
@@ -873,14 +948,60 @@ func (b *Bot) getProfile(userID string) (profile GetProfileRes, err error) {
 
 //-----------------------------------------------------------------------------
 
+// OnReady triggered when the bot is connected
+func (b *Bot) OnReady(clb func()) {
+	b.addCallback(ready, clb)
+}
+
 // OnSpeak triggered when a message is received in the public chat
 func (b *Bot) OnSpeak(clb func(SpeakEvt)) {
 	b.addCallback(speak, clb)
 }
 
+// OnAddDJ triggered when a user takes a dj spot
+func (b *Bot) OnAddDJ(clb func(AddDJEvt)) {
+	b.addCallback(addDJ, clb)
+}
+
+// OnRemDJ triggered when a user leaves a dj spot
+func (b *Bot) OnRemDJ(clb func(RemDJEvt)) {
+	b.addCallback(remDJ, clb)
+}
+
+// OnEscort triggered when a user is escorted off the stage
+func (b *Bot) OnEscort(clb func(EscortEvt)) {
+	b.addCallback(remDJ, clb)
+}
+
+// OnNewModerator triggered when a user is promoted to a moderator
+func (b *Bot) OnNewModerator(clb func(NewModeratorEvt)) {
+	b.addCallback(newModerator, clb)
+}
+
+// OnRemModerator triggered when a user loses their moderator title
+func (b *Bot) OnRemModerator(clb func(RemModeratorEvt)) {
+	b.addCallback(remModerator, clb)
+}
+
+// OnUpdateVotes triggered when a user vote
+// Note: the userid is provided only if the user votes up, or later changes their mind and votes down
+func (b *Bot) OnUpdateVotes(clb func(UpdateVotesEvt)) {
+	b.addCallback(updateVotes, clb)
+}
+
+// OnUpdateUser triggered when a user updates their name/profile
+func (b *Bot) OnUpdateUser(clb func([]byte)) {
+	b.addCallback(updateUser, clb)
+}
+
 // OnRegistered triggered when someone enter the room
 func (b *Bot) OnRegistered(clb func(RegisteredEvt)) {
 	b.addCallback(registered, clb)
+}
+
+// OnDeregistered triggered when a user leaves the room
+func (b *Bot) OnDeregistered(clb func(DeregisteredEvt)) {
+	b.addCallback(deregistered, clb)
 }
 
 // OnRoomChanged triggered when the bot enter a room
@@ -891,6 +1012,27 @@ func (b *Bot) OnRoomChanged(clb func(RoomInfoRes)) {
 // OnNewSong triggered when a new song starts
 func (b *Bot) OnNewSong(clb func(NewSongEvt)) {
 	b.addCallback(newsong, clb)
+}
+
+// OnEndSong triggered at the end of the song. (Just before the newsong/nosong event)
+// The data returned by this event contains information about the song that has just ended.
+func (b *Bot) OnEndSong(clb func(H)) {
+	b.addCallback(endsong, clb)
+}
+
+// OnNoSong triggered when there is no song
+func (b *Bot) OnNoSong(clb func(evt NoSongEvt)) {
+	b.addCallback(endsong, clb)
+}
+
+// OnBootedUse triggered when a user gets booted
+func (b *Bot) OnBootedUser(clb func(evt BootedUserEvt)) {
+	b.addCallback(bootedUser, clb)
+}
+
+// OnSnagged triggered when a user snag the currently playing song
+func (b *Bot) OnSnagged(clb func(SnaggedEvt)) {
+	b.addCallback(snagged, clb)
 }
 
 // OnPmmed triggered when a private message is received

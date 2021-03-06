@@ -420,6 +420,7 @@ type GetFavoritesRes struct {
     "success": true
 }
 */
+
 // DirectoryGraphRes ...
 type DirectoryGraphRes struct {
 	BaseRes
@@ -430,4 +431,173 @@ type DirectoryGraphRes struct {
 type GetFansRes struct {
 	BaseRes
 	Fans []string `json:"fans"`
+}
+
+// {"current_song": {"_id": "60433b2647b5e3001f34a502", "starttime": 1615025521.545077}, "roomid": "6041625e3f4bfc001c3a4ab3", "command": "update_votes", "success": true, "room": {"metadata": {"upvotes": 1, "downvotes": 0, "listeners": 3, "votelog": [["604130fb3f4bfc001809d428", "up"]]}}}
+
+// UpdateVotesEvt ...
+// Note: the userid is provided only if the user vote up, or later changes their mind and vote down.
+type UpdateVotesEvt struct {
+	CurrentSong struct {
+		ID        string  `json:"_id"`
+		Starttime float64 `json:"starttime"`
+	} `json:"current_song"`
+	Roomid  string `json:"roomid"`
+	Command string `json:"command"`
+	Success bool   `json:"success"`
+	Room    struct {
+		Metadata struct {
+			Upvotes   int        `json:"upvotes"`
+			Downvotes int        `json:"downvotes"`
+			Listeners int        `json:"listeners"`
+			Votelog   [][]string `json:"votelog"`
+		} `json:"metadata"`
+	} `json:"room"`
+}
+
+// {"command": "deregistered", "roomid": "6041625e3f4bfc001c3a4ab3", "user": [{"fanofs": 0, "name": "this is a rael user", "created": 1614910808.827847, "laptop": "mac", "userid": "60419558c2dbd9001be76743", "acl": 0, "fans": 0, "points": 0, "images": {"fullfront": "/roommanager_assets/avatars/6/fullfront.png", "headfront": "/roommanager_assets/avatars/6/headfront.png"}, "_id": "60419558c2dbd9001be76743", "avatarid": 6, "registered": 1615012282.45808}], "success": true}
+
+// DeregisteredEvt ...
+type DeregisteredEvt struct {
+	Command string `json:"command"`
+	Roomid  string `json:"roomid"`
+	User    []struct {
+		Fanofs  int     `json:"fanofs"`
+		Name    string  `json:"name"`
+		Created float64 `json:"created"`
+		Laptop  string  `json:"laptop"`
+		Userid  string  `json:"userid"`
+		ACL     int     `json:"acl"`
+		Fans    int     `json:"fans"`
+		Points  int     `json:"points"`
+		Images  struct {
+			Fullfront string `json:"fullfront"`
+			Headfront string `json:"headfront"`
+		} `json:"images"`
+		ID         string  `json:"_id"`
+		Avatarid   int     `json:"avatarid"`
+		Registered float64 `json:"registered"`
+	} `json:"user"`
+	Success bool `json:"success"`
+}
+
+// SnaggedEvt ...
+type SnaggedEvt struct {
+	Command string `json:"command"`
+	UserID  string `json:"userid"`
+	RoomID  string `json:"roomid"`
+}
+
+// NoSongEvt ...
+type NoSongEvt struct {
+	Command string `json:"command"`
+	Room    struct {
+		Name      string  `json:"name"`
+		Created   float64 `json:"created"`
+		Shortcut  string  `json:"shortcut"`
+		NameLower string  `json:"name_lower"`
+		Roomid    string  `json:"roomid"`
+		Metadata  struct {
+			DjFull      bool          `json:"dj_full"`
+			Djs         []interface{} `json:"djs"`
+			Upvotes     int           `json:"upvotes"`
+			Privacy     string        `json:"privacy"`
+			MaxDjs      int           `json:"max_djs"`
+			Downvotes   int           `json:"downvotes"`
+			Random      float64       `json:"random"`
+			Userid      string        `json:"userid"`
+			Listeners   int           `json:"listeners"`
+			Djcount     int           `json:"djcount"`
+			MaxSize     int           `json:"max_size"`
+			Djthreshold int           `json:"djthreshold"`
+			ModeratorID []string      `json:"moderator_id"`
+			CurrentSong interface{}   `json:"current_song"`
+			CurrentDj   interface{}   `json:"current_dj"`
+			Votelog     []interface{} `json:"votelog"`
+		} `json:"metadata"`
+	} `json:"room"`
+	Success bool `json:"success"`
+}
+
+// {"success": true, "userid": "604324f247c69b001e444a94", "reason": null, "command": "booted_user", "modid": "604130fb3f4bfc001809d428", "roomid": "6041625e3f4bfc001c3a4ab3"}
+
+// BootedUserEvt ...
+type BootedUserEvt struct {
+	Success bool        `json:"success"`
+	Userid  string      `json:"userid"`
+	Reason  interface{} `json:"reason"`
+	Command string      `json:"command"`
+	Modid   string      `json:"modid"`
+	Roomid  string      `json:"roomid"`
+}
+
+// {"command": "update_user", "userid": "604324f247c69b001e444a94", "roomid": "6041625e3f4bfc001c3a4ab3", "avatarid": 1}
+// {"command": "update_user", "userid": "604324f247c69b001e444a94", "name": "b76ab0565fadd09e7d5e", "roomid": "6041625e3f4bfc001c3a4ab3"}
+
+// {"djs": {"1": "604130fb3f4bfc001809d428", "0": "6041b4a8c2dbd9001be77391"}, "success": true, "command": "add_dj", "user": [{"fanofs": 7, "name": "agilbert", "created": 1614885115.13613, "laptop": "mac", "userid": "604130fb3f4bfc001809d428", "acl": 0, "fans": 13, "points": 209, "images": {"fullfront": "/roommanager_assets/avatars/8/fullfront.png", "headfront": "/roommanager_assets/avatars/8/headfront.png"}, "_id": "604130fb3f4bfc001809d428", "avatarid": 8, "registered": 1614885141.040958}], "roomid": "6041625e3f4bfc001c3a4ab3", "placements": []}
+
+type DjEvt struct {
+	Djs struct {
+		Num0 string `json:"0"`
+		Num1 string `json:"1"`
+		Num2 string `json:"2"`
+		Num3 string `json:"3"`
+		Num4 string `json:"4"`
+	} `json:"djs"`
+	Success bool   `json:"success"`
+	Command string `json:"command"`
+	User    []struct {
+		Fanofs  int     `json:"fanofs"`
+		Name    string  `json:"name"`
+		Created float64 `json:"created"`
+		Laptop  string  `json:"laptop"`
+		Userid  string  `json:"userid"`
+		ACL     int     `json:"acl"`
+		Fans    int     `json:"fans"`
+		Points  int     `json:"points"`
+		Images  struct {
+			Fullfront string `json:"fullfront"`
+			Headfront string `json:"headfront"`
+		} `json:"images"`
+		ID         string  `json:"_id"`
+		Avatarid   int     `json:"avatarid"`
+		Registered float64 `json:"registered"`
+	} `json:"user"`
+	Roomid     string        `json:"roomid"`
+	Placements []interface{} `json:"placements"`
+	Modid      string        `json:"modid"`
+}
+
+// AddDJEvt ...
+type AddDJEvt struct {
+	DjEvt
+}
+
+// {"command": "rem_dj", "djs": {"0": "6041b4a8c2dbd9001be77391"}, "roomid": "6041625e3f4bfc001c3a4ab3", "user": [{"fanofs": 7, "name": "agilbert", "created": 1614885115.13613, "laptop": "mac", "userid": "604130fb3f4bfc001809d428", "acl": 0, "fans": 13, "points": 209, "images": {"fullfront": "/roommanager_assets/avatars/8/fullfront.png", "headfront": "/roommanager_assets/avatars/8/headfront.png"}, "_id": "604130fb3f4bfc001809d428", "avatarid": 8, "registered": 1614885141.040958}], "success": true}
+
+// RemDJEvt ...
+type RemDJEvt struct {
+	DjEvt
+}
+
+// {"djs": {"0": "6041b4a8c2dbd9001be77391"}, "success": true, "command": "rem_dj", "user": [{"fanofs": 7, "name": "agilbert", "created": 1614885115.13613, "laptop": "mac", "userid": "604130fb3f4bfc001809d428", "acl": 0, "fans": 13, "points": 209, "images": {"fullfront": "/roommanager_assets/avatars/8/fullfront.png", "headfront": "/roommanager_assets/avatars/8/headfront.png"}, "_id": "604130fb3f4bfc001809d428", "avatarid": 8, "registered": 1614885141.040958}], "modid": "60419558c2dbd9001be76743", "roomid": "6041625e3f4bfc001c3a4ab3"}
+
+type EscortEvt struct {
+	DjEvt
+}
+
+// RemModeratorEvt ...
+type RemModeratorEvt struct {
+	Command string `json:"command"`
+	UserID  string `json:"userid"`
+	RoomID  string `json:"roomid"`
+	Success bool   `json:"success"`
+}
+
+// NewModeratorEvt ...
+type NewModeratorEvt struct {
+	Command string `json:"command"`
+	UserID  string `json:"userid"`
+	RoomID  string `json:"roomid"`
+	Success bool   `json:"success"`
 }

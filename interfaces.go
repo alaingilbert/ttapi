@@ -3,11 +3,24 @@ package ttapi
 // IBot ...
 type IBot interface {
 	On(cmd string, clb func([]byte))
+	OnAddDJ(func(AddDJEvt))
+	OnBootedUser(func(BootedUserEvt))
+	OnDeregistered(func(DeregisteredEvt))
+	OnEndSong(func(H))
+	OnEscort(func(EscortEvt))
+	OnNewModerator(func(NewModeratorEvt))
 	OnNewSong(func(NewSongEvt))
+	OnNoSong(func(NoSongEvt))
 	OnPmmed(func(PmmedEvt))
 	OnRegistered(func(RegisteredEvt))
+	OnRemDJ(func(RemDJEvt))
+	OnRemModerator(func(RemModeratorEvt))
 	OnRoomChanged(func(RoomInfoRes))
+	OnSnagged(func(SnaggedEvt))
 	OnSpeak(func(SpeakEvt))
+	OnReady(func())
+	OnUpdateUser(func([]byte))
+	OnUpdateVotes(func(UpdateVotesEvt))
 
 	AddDj() error
 	AddFavorite(roomID string) error
