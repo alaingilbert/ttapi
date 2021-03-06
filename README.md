@@ -26,7 +26,6 @@ package main
 
 import (
     "os"
-    "time"
     "github.com/alaingilbert/ttapi"
 )
 
