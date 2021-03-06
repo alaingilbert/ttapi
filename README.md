@@ -36,7 +36,9 @@ func main() {
     roomID := os.Getenv("TTAPI_ROOM_ID")
     bot := ttapi.NewBot(auth, userID, roomID)
     bot.OnSpeak(func(evt ttapi.SpeakEvt) {
-        _ = bot.Speakf("Hey! How are you @%s ?", evt.Name)
+        if evt.Text == "/hello" {
+            _ = bot.Speakf("Hey! How are you @%s ?", evt.Name)
+        }
     })
     bot.Start()
 }
