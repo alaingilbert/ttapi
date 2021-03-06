@@ -19,20 +19,20 @@ This bot responds to anybody who writes "/hello" in the chat.
 package main
 
 import (
-	"os"
-	"time"
-	"github.com/alaingilbert/ttapi"
+    "os"
+    "time"
+    "github.com/alaingilbert/ttapi"
 )
 
 func main() {
-	auth := os.Getenv("TTAPI_AUTH")
-	userID := os.Getenv("TTAPI_USER_ID")
-	roomID := os.Getenv("TTAPI_ROOM_ID")
-	bot := ttapi.NewBot(auth, userID, roomID)
-	bot.OnSpeak(func(evt ttapi.SpeakEvt) {
-		_ = bot.Speakf("Hey! How are you @%s ?", evt.Name)
-	})
-	bot.Start()
+    auth := os.Getenv("TTAPI_AUTH")
+    userID := os.Getenv("TTAPI_USER_ID")
+    roomID := os.Getenv("TTAPI_ROOM_ID")
+    bot := ttapi.NewBot(auth, userID, roomID)
+    bot.OnSpeak(func(evt ttapi.SpeakEvt) {
+        _ = bot.Speakf("Hey! How are you @%s ?", evt.Name)
+    })
+    bot.Start()
 }
 ```
 
