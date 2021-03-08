@@ -316,7 +316,8 @@ type UnackMsg struct {
 
 // Send a payload to the WS server
 func (b *Bot) send(payload H, callback func([]byte)) {
-	payload["msgid"] = b.msgID
+	msgID := b.msgID
+	payload["msgid"] = msgID
 	payload["clientid"] = b.clientID
 	payload["userid"] = b.userID
 	payload["userauth"] = b.auth
@@ -333,7 +334,7 @@ func (b *Bot) send(payload H, callback func([]byte)) {
 		logrus.Error(err)
 		return
 	}
-	b.unackMsgs = append(b.unackMsgs, UnackMsg{MsgID: b.msgID, Payload: payload, Callback: callback})
+	b.unackMsgs = append(b.unackMsgs, UnackMsg{MsgID: msgID, Payload: payload, Callback: callback})
 	b.msgID++
 }
 
@@ -484,15 +485,23 @@ func (b *Bot) addCallback(cmd string, clb interface{}) {
 	b.callbacks[cmd] = append(b.callbacks[cmd], clb)
 }
 
+func baseErr(p BaseRes) error {
+	if !p.Success {
+		return errors.New(p.Err)
+	}
+	return nil
+}
+
+func txBaseErr(b *Bot, h H) error {
+	var res BaseRes
+	b.tx(h, &res)
+	return baseErr(res)
+}
+
 //-----------------------------------------------------------------------------
 
 func (b *Bot) speak(msg string) error {
-	var res BaseRes
-	b.tx(H{"api": roomSpeak, "roomid": b.roomID, "text": msg}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomSpeak, "roomid": b.roomID, "text": msg})
 }
 
 func (b *Bot) speakf(format string, args ...interface{}) error {
@@ -500,50 +509,27 @@ func (b *Bot) speakf(format string, args ...interface{}) error {
 }
 
 func (b *Bot) pm(userID, msg string) error {
-	var res BaseRes
-	b.tx(H{"api": pmSend, "receiverid": userID, "text": msg}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": pmSend, "receiverid": userID, "text": msg})
 }
 
 func (b *Bot) modifyName(newName string) error {
-	var res BaseRes
-	b.tx(H{"api": userModify, "name": newName}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": userModify, "name": newName})
 }
 
 func (b *Bot) modifyLaptop(laptop string) error {
 	if !isValidLaptop(laptop) {
 		return errors.New("invalid laptop : " + truncStr(laptop, 15, "..."))
 	}
-	var res BaseRes
-	b.tx(H{"api": userModify, "laptop": laptop}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": userModify, "laptop": laptop})
 }
 
 func (b *Bot) setAvatar(avatarID int) error {
-	var res BaseRes
-	b.tx(H{"api": userSetAvatar, "avatarid": avatarID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": userSetAvatar, "avatarid": avatarID})
 }
 
 func (b *Bot) userAvailableAvatars() (out UserAvailableAvatarsRes, err error) {
 	b.tx(H{"api": userAvailableAvatars}, &out)
-	if !out.Success {
-		return out, errors.New(out.Err)
-	}
-	return out, nil
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) getAvatarIDs() (out []int, err error) {
@@ -569,37 +555,22 @@ func (b *Bot) getAvatarIDs() (out []int, err error) {
 }
 
 func (b *Bot) updatePresence() error {
-	var res BaseRes
-	b.tx(H{"api": presenceUpdate, "status": b.currentStatus}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": presenceUpdate, "status": b.currentStatus})
 }
 
 func (b *Bot) roomRegister(roomID string) error {
 	if roomID == "" {
 		roomID = b.roomID
 	}
-	var res BaseRes
-	b.tx(H{"api": roomRegister, "roomid": roomID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomRegister, "roomid": roomID})
 }
 
 func (b *Bot) userModify(h H) error {
-	var res BaseRes
 	p := H{"api": userModify}
 	for k, v := range h {
 		p[k] = v
 	}
-	b.tx(p, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, p)
 }
 
 func (b *Bot) setStatus(status string) error {
@@ -611,47 +582,24 @@ func (b *Bot) setStatus(status string) error {
 }
 
 func (b *Bot) bootUser(userID, reason string) error {
-	var res BaseRes
-	b.tx(H{"api": roomBootUser, "roomid": b.roomID, "target_userid": userID, "reason": reason}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomBootUser, "roomid": b.roomID, "target_userid": userID, "reason": reason})
 }
 
 func (b *Bot) roomDeregister() error {
-	var res BaseRes
-	b.tx(H{"api": roomDeregister, "roomid": b.roomID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomDeregister, "roomid": b.roomID})
 }
 
 func (b *Bot) playlistCreate(playlistName string) error {
-	var res BaseRes
-	b.tx(H{"api": playlistCreate, "playlist_name": playlistName}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": playlistCreate, "playlist_name": playlistName})
 }
 
 func (b *Bot) playlistDelete(playlistName string) error {
-	var res BaseRes
-	b.tx(H{"api": playlistDelete, "playlist_name": playlistName}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": playlistDelete, "playlist_name": playlistName})
 }
 
 func (b *Bot) playlistListAll() (out PlaylistListAllRes, err error) {
 	b.tx(H{"api": playlistListAll}, &out)
-	if !out.Success {
-		return out, errors.New(out.Err)
-	}
-	return out, nil
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) playlistAll(playlistName string) (out PlaylistAllRes, err error) {
@@ -659,10 +607,7 @@ func (b *Bot) playlistAll(playlistName string) (out PlaylistAllRes, err error) {
 		playlistName = "default"
 	}
 	b.tx(H{"api": playlistAll, "playlist_name": playlistName}, &out)
-	if !out.Success {
-		return out, errors.New(out.Err)
-	}
-	return out, nil
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) playlistAdd(songID, playlistName string, idx int) error {
@@ -672,75 +617,40 @@ func (b *Bot) playlistAdd(songID, playlistName string, idx int) error {
 	if songID == "" {
 		songID = b.CurrentSongID
 	}
-	var res BaseRes
-	b.tx(H{"api": playlistAdd, "playlist_name": playlistName, "song_dict": H{"fileid": songID}, "index": idx}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": playlistAdd, "playlist_name": playlistName, "song_dict": H{"fileid": songID}, "index": idx})
 }
 
 func (b *Bot) playlistRemove(playlistName string, idx int) error {
 	if playlistName == "" {
 		playlistName = "default"
 	}
-	var res BaseRes
-	b.tx(H{"api": playlistRemove, "playlist_name": playlistName, "index": idx}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": playlistRemove, "playlist_name": playlistName, "index": idx})
 }
 
 func (b *Bot) playlistReorder(playlistName string, idxFrom, idxTo int) error {
 	if playlistName == "" {
 		playlistName = "default"
 	}
-	var res BaseRes
-	b.tx(H{"api": playlistReorder, "playlist_name": playlistName, "index_from": idxFrom, "index_to": idxTo}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": playlistReorder, "playlist_name": playlistName, "index_from": idxFrom, "index_to": idxTo})
 }
 
 func (b *Bot) playlistSwitch(playlistName string) error {
 	if playlistName == "" {
 		playlistName = "default"
 	}
-	var res BaseRes
-	b.tx(H{"api": playlistSwitch, "playlist_name": playlistName}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": playlistSwitch, "playlist_name": playlistName})
 }
 
 func (b *Bot) playlistRename(oldPlaylistName, newPlaylistName string) error {
-	var res BaseRes
-	b.tx(H{"api": playlistRename, "old_playlist_name": oldPlaylistName, "new_playlist_name": newPlaylistName}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": playlistRename, "old_playlist_name": oldPlaylistName, "new_playlist_name": newPlaylistName})
 }
 
 func (b *Bot) addModerator(userID string) error {
-	var res BaseRes
-	b.tx(H{"api": roomAddModerator, "roomid": b.roomID, "target_userid": userID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomAddModerator, "roomid": b.roomID, "target_userid": userID})
 }
 
 func (b *Bot) remModerator(userID string) error {
-	var res BaseRes
-	b.tx(H{"api": roomRemModerator, "roomid": b.roomID, "target_userid": userID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomRemModerator, "roomid": b.roomID, "target_userid": userID})
 }
 
 func (b *Bot) snag() error {
@@ -748,12 +658,9 @@ func (b *Bot) snag() error {
 	fh := Sha1([]byte(GenerateToken()))
 	i := []string{b.userID, b.CurrentDjID, b.CurrentSongID, b.roomID, "queue", "board", "false", "false", sh}
 	vh := Sha1([]byte(strings.Join(i, "/")))
-	var res BaseRes
-	b.tx(H{"api": snagAdd, "roomid": b.roomID, "djid": b.CurrentDjID, "songid": b.CurrentSongID, "site": "queue", "location": "board", "in_queue": "false", "blocked": "false", "vh": vh, "sh": sh, "fh": fh}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	h := H{"api": snagAdd, "roomid": b.roomID, "djid": b.CurrentDjID, "songid": b.CurrentSongID, "site": "queue",
+		"location": "board", "in_queue": "false", "blocked": "false", "vh": vh, "sh": sh, "fh": fh}
+	return txBaseErr(b, h)
 }
 
 func (b *Bot) vote(val string) error {
@@ -763,12 +670,7 @@ func (b *Bot) vote(val string) error {
 	vh := Sha1([]byte(b.roomID + val + b.CurrentSongID))
 	th := Sha1([]byte(GenerateToken()))
 	ph := Sha1([]byte(GenerateToken()))
-	var res BaseRes
-	b.tx(H{"api": roomVote, "roomid": b.roomID, "val": val, "vh": vh, "th": th, "ph": ph}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomVote, "roomid": b.roomID, "val": val, "vh": vh, "th": th, "ph": ph})
 }
 
 func (b *Bot) voteUp() error {
@@ -787,78 +689,43 @@ func (b *Bot) addFavorite(roomID string) error {
 	if roomID == "" {
 		roomID = b.roomID
 	}
-	var res BaseRes
-	b.tx(H{"api": roomAddFavorite, "roomid": roomID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomAddFavorite, "roomid": roomID})
 }
 
 func (b *Bot) remFavorite(roomID string) error {
 	if roomID == "" {
 		roomID = b.roomID
 	}
-	var res BaseRes
-	b.tx(H{"api": roomRemFavorite, "roomid": roomID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomRemFavorite, "roomid": roomID})
 }
 
 func (b *Bot) getFavorites() (out GetFavoritesRes, err error) {
 	b.tx(H{"api": roomGetFavorites}, &out)
-	if !out.Success {
-		return out, errors.New(out.Err)
-	}
-	return out, nil
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) directoryGraph() (out DirectoryGraphRes, err error) {
 	b.tx(H{"api": roomDirectoryGraph}, &out)
-	if !out.Success {
-		return out, errors.New(out.Err)
-	}
-	return out, nil
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) addDj() error {
-	var res BaseRes
-	b.tx(H{"api": roomAddDj, "roomid": b.roomID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomAddDj, "roomid": b.roomID})
 }
 
 func (b *Bot) remDj(userID string) error {
-	var res BaseRes
-	b.tx(H{"api": roomRemDj, "roomid": b.roomID, "djid": userID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomRemDj, "roomid": b.roomID, "djid": userID})
 }
 
 func (b *Bot) getPresence(userID string) (out GetPresenceRes, err error) {
 	if userID == "" {
 		userID = b.userID
 	}
-	b.tx(H{"api": presenceGet, "uid": userID}, &out)
-	if !out.Success {
-		return out, errors.New(out.Err)
-	}
-	return out, nil
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) stopSong() error {
-	var res BaseRes
-	b.tx(H{"api": roomStopSong, "roomid": b.roomID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+	return txBaseErr(b, H{"api": roomStopSong, "roomid": b.roomID})
 }
 
 func (b *Bot) skip() error {
@@ -867,83 +734,54 @@ func (b *Bot) skip() error {
 
 func (b *Bot) userInfo() (out UserInfoRes, err error) {
 	b.tx(H{"api": userInfo}, &out)
-	if !out.Success {
-		return out, errors.New(out.Err)
-	}
-	return out, nil
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) getFanOf(userID string) (out GetFanOfRes, err error) {
 	b.tx(H{"api": userGetFanOf, "userid": userID}, &out)
-	if !out.Success {
-		return out, errors.New(out.Err)
-	}
-	return out, nil
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) getFans() (out GetFansRes, err error) {
 	b.tx(H{"api": userGetFans}, &out)
-	if !out.Success {
-		return out, errors.New(out.Err)
+	return out, baseErr(out.BaseRes)
+}
+
+func (b *Bot) becomeFan(userID string) error {
+	return txBaseErr(b, H{"api": userBecomeFan, "djid": userID})
+}
+
+func (b *Bot) removeFan(userID string) error {
+	return txBaseErr(b, H{"api": userRemoveFan, "djid": userID})
+}
+
+func (b *Bot) roomInfoHashMap() (out H, err error) {
+	b.tx(H{"api": roomInfo, "roomid": b.roomID}, &out)
+	if !out["success"].(bool) {
+		return out, errors.New(out["err"].(string))
 	}
 	return out, nil
 }
 
-func (b *Bot) becomeFan(userID string) error {
-	var res BaseRes
-	b.tx(H{"api": userBecomeFan, "djid": userID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
+func (b *Bot) roomInfoRaw() (out []byte) {
+	b.tx(H{"api": roomInfo, "roomid": b.roomID}, &out)
+	return out
 }
 
-func (b *Bot) removeFan(userID string) error {
-	var res BaseRes
-	b.tx(H{"api": userRemoveFan, "djid": userID}, &res)
-	if !res.Success {
-		return errors.New(res.Err)
-	}
-	return nil
-}
-
-func (b *Bot) roomInfoHashMap() (res H, err error) {
-	b.tx(H{"api": roomInfo, "roomid": b.roomID}, &res)
-	if !res["success"].(bool) {
-		return res, errors.New(res["err"].(string))
-	}
-	return res, nil
-}
-
-func (b *Bot) roomInfoRaw() (res []byte) {
-	b.tx(H{"api": roomInfo, "roomid": b.roomID}, &res)
-	return res
-}
-
-func (b *Bot) roomInfo() (res RoomInfoRes, err error) {
-	b.tx(H{"api": roomInfo, "roomid": b.roomID}, &res)
-	if !res.Success {
-		return res, errors.New(res.Err)
-	}
-	return res, nil
+func (b *Bot) roomInfo() (out RoomInfoRes, err error) {
+	b.tx(H{"api": roomInfo, "roomid": b.roomID}, &out)
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) getUserID(name string) (id string, err error) {
 	var res GetUserIDRes
 	b.tx(H{"api": userGetID, "name": name}, &res)
-	if !res.Success {
-		return "", errors.New("failed to get id for " + name)
-	}
-	return res.UserID, nil
+	return res.UserID, baseErr(res.BaseRes)
 }
 
-func (b *Bot) getProfile(userID string) (profile GetProfileRes, err error) {
-	var res GetProfileRes
-	b.tx(H{"api": userGetProfileInfo, "profileid": userID}, &res)
-	if !res.Success {
-		return profile, errors.New("failed to get profile for " + userID)
-	}
-	return res, nil
+func (b *Bot) getProfile(userID string) (out GetProfileRes, err error) {
+	b.tx(H{"api": userGetProfileInfo, "profileid": userID}, &out)
+	return out, baseErr(out.BaseRes)
 }
 
 //-----------------------------------------------------------------------------
@@ -1026,7 +864,7 @@ func (b *Bot) OnNoSong(clb func(evt NoSongEvt)) {
 }
 
 // OnBootedUse triggered when a user gets booted
-func (b *Bot) OnBootedUser(clb func(evt BootedUserEvt)) {
+func (b *Bot) OnBootedUser(clb func(BootedUserEvt)) {
 	b.addCallback(bootedUser, clb)
 }
 
@@ -1204,12 +1042,12 @@ func (b *Bot) RemFavorite(roomID string) error {
 }
 
 // GetFavorites get your favorite rooms
-func (b *Bot) GetFavorites() (out GetFavoritesRes, err error) {
+func (b *Bot) GetFavorites() (GetFavoritesRes, error) {
 	return b.getFavorites()
 }
 
 // DirectoryGraph get the location of your friends/idols
-func (b *Bot) DirectoryGraph() (out DirectoryGraphRes, err error) {
+func (b *Bot) DirectoryGraph() (DirectoryGraphRes, error) {
 	return b.directoryGraph()
 }
 
@@ -1224,7 +1062,7 @@ func (b *Bot) RemDj(userID string) error {
 }
 
 // GetPresence get presence for the specified user, or your presence if a userID is not specified
-func (b *Bot) GetPresence(userID string) (out GetPresenceRes, err error) {
+func (b *Bot) GetPresence(userID string) (GetPresenceRes, error) {
 	return b.getPresence(userID)
 }
 
@@ -1249,7 +1087,7 @@ func (b *Bot) GetFanOf(userID string) (GetFanOfRes, error) {
 }
 
 // GetFans get the list of everyone who is a fan of you
-func (b *Bot) GetFans() (out GetFansRes, err error) {
+func (b *Bot) GetFans() (GetFansRes, error) {
 	return b.getFans()
 }
 
@@ -1264,12 +1102,12 @@ func (b *Bot) RemoveFan(userID string) error {
 }
 
 // RoomInfo gets information about the current room
-func (b *Bot) RoomInfoHashMap() (res H, err error) {
+func (b *Bot) RoomInfoHashMap() (H, error) {
 	return b.roomInfoHashMap()
 }
 
 // RoomInfo gets information about the current room
-func (b *Bot) RoomInfo() (res RoomInfoRes, err error) {
+func (b *Bot) RoomInfo() (RoomInfoRes, error) {
 	return b.roomInfo()
 }
 
@@ -1279,6 +1117,6 @@ func (b *Bot) GetUserID(name string) (id string, err error) {
 }
 
 // GetProfile given a UserID, gets a user profile
-func (b *Bot) GetProfile(userID string) (profile GetProfileRes, err error) {
+func (b *Bot) GetProfile(userID string) (GetProfileRes, error) {
 	return b.getProfile(userID)
 }
