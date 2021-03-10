@@ -192,13 +192,11 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 					b.emit(escort, rawJson)
 				}
 			}
-			break
 		case nosong:
 			b.CurrentDjID = ""
 			b.CurrentSongID = ""
 			b.emit(endsong, b.tmpSong)
 			b.emit(nosong, rawJson)
-			break
 		case newsong:
 			if b.CurrentSongID != "" {
 				b.emit(endsong, b.tmpSong)
@@ -209,7 +207,6 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 				b.setTmpSong(m)
 			}
 			b.emit(newsong, rawJson)
-			break
 		case updateVotes:
 			if b.tmpSong != nil {
 				ups := safeMapPath(jsonHashMap, "room.metadata.upvotes")
@@ -228,10 +225,8 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 				}
 			}
 			b.emit(updateVotes, rawJson)
-			break
 		default:
 			b.emit(command, rawJson)
-			break
 		}
 	}
 }
@@ -262,11 +257,9 @@ func (b *Bot) executeCallback(rawJson []byte, jsonHashMap map[string]interface{}
 							b.emit(roomChanged, roomInfo)
 						})
 					}
-					break
 				case roomInfo:
 					b.CurrentDjID = castStr(safeMapPath(jsonHashMap, "room.metadata.current_dj"))
 					b.CurrentSongID = castStr(safeMapPath(jsonHashMap, "room.metadata.current_song._id"))
-					break
 				}
 
 				// Execute callback if provided
@@ -355,12 +348,10 @@ func (b *Bot) tx(payload H, res interface{}) {
 		switch v := res.(type) {
 		case *[]byte:
 			*v = rawJson
-			break
 		default:
 			if err := json.Unmarshal(rawJson, &res); err != nil {
 				logrus.Error(err)
 			}
-			break
 		}
 		cancel()
 	}
