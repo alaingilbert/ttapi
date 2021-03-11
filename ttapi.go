@@ -192,6 +192,7 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 					b.emit(escort, rawJson)
 				}
 			}
+			b.emit(remDJ, rawJson)
 		case nosong:
 			b.CurrentDjID = ""
 			b.CurrentSongID = ""
