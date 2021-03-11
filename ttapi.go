@@ -192,12 +192,10 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 					b.emit(escort, rawJson)
 				}
 			}
-			b.emit(remDJ, rawJson)
 		case nosong:
 			b.CurrentDjID = ""
 			b.CurrentSongID = ""
 			b.emit(endsong, b.tmpSong)
-			b.emit(nosong, rawJson)
 		case newsong:
 			if b.CurrentSongID != "" {
 				b.emit(endsong, b.tmpSong)
@@ -207,7 +205,6 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 			if m, ok := jsonHashMap["room"].(map[string]interface{}); ok {
 				b.setTmpSong(m)
 			}
-			b.emit(newsong, rawJson)
 		case updateVotes:
 			if b.tmpSong != nil {
 				ups := safeMapPath(jsonHashMap, "room.metadata.upvotes")
@@ -225,10 +222,8 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 					b.tmpSong["room"] = map[string]interface{}{"metadata": map[string]interface{}{"upvotes": ups, "downvotes": downs, "listeners": ls}}
 				}
 			}
-			b.emit(updateVotes, rawJson)
-		default:
-			b.emit(command, rawJson)
 		}
+		b.emit(command, rawJson)
 	}
 }
 
