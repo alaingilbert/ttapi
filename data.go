@@ -349,6 +349,23 @@ type PlaylistAllRes struct {
 	} `json:"list"`
 }
 
+// SearchRes ...
+type SearchRes struct {
+	BaseRes
+	List []struct {
+		Sourceid string `json:"sourceid"`
+		Source   string `json:"source"`
+		ID       string `json:"_id"`
+		Metadata struct {
+			Coverart string `json:"coverart"`
+			Length   int    `json:"length"`
+			Song     string `json:"song"`
+			Artist   string `json:"artist"`
+			Adult    bool   `json:"adult"`
+		} `json:"metadata"`
+	} `json:"docs"`
+}
+
 // GetFavoritesRes ...
 type GetFavoritesRes struct {
 	BaseRes
