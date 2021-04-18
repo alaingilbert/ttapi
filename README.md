@@ -7,7 +7,7 @@ Join us on Discord https://discord.gg/4AA2DqWpVc
 -----
 
 A simple go wrapper for the turntable API.  
-You'll need to find your `AUTH`, `USERID` and `ROOMID` information with [this bookmarklet](http://alaingilbert.github.com/Turntable-API/bookmarklet.html).
+You'll need to find your `AUTH`, `USERID` and `ROOMID` information with [this bookmarklet](http://alaingilbert.github.io/Turntable-API/bookmarklet.html).
 
 ## Installation
 
