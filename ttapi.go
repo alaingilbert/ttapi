@@ -890,7 +890,7 @@ func (b *Bot) OnNoSong(clb func(evt NoSongEvt)) {
 	b.addCallback(endsong, clb)
 }
 
-// OnBootedUse triggered when a user gets booted
+// OnBootedUser triggered when a user gets booted
 func (b *Bot) OnBootedUser(clb func(BootedUserEvt)) {
 	b.addCallback(bootedUser, clb)
 }
@@ -957,7 +957,7 @@ func (b *Bot) UserAvailableAvatars() (UserAvailableAvatarsRes, error) {
 	return b.userAvailableAvatars()
 }
 
-// GetAvatarIds get the avatar ids that you can currently use
+// GetAvatarIDs get the avatar ids that you can currently use
 func (b *Bot) GetAvatarIDs() ([]int, error) {
 	return b.getAvatarIDs()
 }
@@ -992,7 +992,7 @@ func (b *Bot) PlaylistDelete(playlistName string) error {
 	return b.playlistDelete(playlistName)
 }
 
-// PlaylistAll list all your playlists
+// PlaylistListAll list all your playlists
 func (b *Bot) PlaylistListAll() (PlaylistListAllRes, error) {
 	return b.playlistListAll()
 }
@@ -1133,7 +1133,7 @@ func (b *Bot) RemoveFan(userID string) error {
 	return b.removeFan(userID)
 }
 
-// RoomInfo gets information about the current room
+// RoomInfoHashMap gets information about the current room
 func (b *Bot) RoomInfoHashMap() (H, error) {
 	return b.roomInfoHashMap()
 }
