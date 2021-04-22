@@ -24,27 +24,28 @@ var lenRgx = regexp.MustCompile(`^~m~([0-9]+)~m~`)
 // To get the auth, user id and room id, you can use the following bookmarklet
 // http://alaingilbert.github.io/Turntable-API/bookmarklet.html
 type Bot struct {
-	auth          string                   // auth id, can be retrieved using bookmarklet
-	userID        string                   // user id, can be retrieved using bookmarklet
-	roomID        string                   // room id, can be retrieved using bookmarklet
-	client        string                   // web
-	laptop        string                   // mac
-	logWs         bool                     // either or not to log websocket messages
-	msgID         int                      // keep track of message id used to communicate with ws server
-	clientID      string                   // random string
-	currentStatus string                   // available/unavailable/away used for the chat
-	lastHeartbeat time.Time                // keep track of last heartbeat timestamp
-	lastActivity  time.Time                // keep track of last received message timestamp
-	ws            *websocket.Conn          // websocket connection to turntable
-	unackMsgs     []UnackMsg               // list of messages sent that are not acknowledged by the ws server
-	callbacks     map[string][]interface{} // user defined callbacks set for each events
-	ctx           context.Context          // bot context
-	cancel        context.CancelFunc       // cancel function to stop bot
-	CurrentSongID string                   // cached current song id
-	CurrentDjID   string                   // cached current dj id
-	tmpSong       H                        // cached song fake message, used to emit our own fake event (endsong)
-	txCh          chan TxMsg               // messages to transmit to turntable
-	rxCh          chan RxMsg               // messages received from turntable
+	auth            string                   // auth id, can be retrieved using bookmarklet
+	userID          string                   // user id, can be retrieved using bookmarklet
+	roomID          string                   // room id, can be retrieved using bookmarklet
+	client          string                   // web
+	laptop          string                   // mac
+	logWs           bool                     // either or not to log websocket messages
+	msgID           int                      // keep track of message id used to communicate with ws server
+	clientID        string                   // random string
+	currentStatus   string                   // available/unavailable/away used for the chat
+	currentSearches []Search                 // Current searches in progress
+	lastHeartbeat   time.Time                // keep track of last heartbeat timestamp
+	lastActivity    time.Time                // keep track of last received message timestamp
+	ws              *websocket.Conn          // websocket connection to turntable
+	unackMsgs       []UnackMsg               // list of messages sent that are not acknowledged by the ws server
+	callbacks       map[string][]interface{} // user defined callbacks set for each events
+	ctx             context.Context          // bot context
+	cancel          context.CancelFunc       // cancel function to stop bot
+	CurrentSongID   string                   // cached current song id
+	CurrentDjID     string                   // cached current dj id
+	tmpSong         H                        // cached song fake message, used to emit our own fake event (endsong)
+	txCh            chan TxMsg               // messages to transmit to turntable
+	rxCh            chan RxMsg               // messages received from turntable
 }
 
 // NewBot creates a new bot
@@ -222,8 +223,37 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 					b.tmpSong["room"] = map[string]interface{}{"metadata": map[string]interface{}{"upvotes": ups, "downvotes": downs, "listeners": ls}}
 				}
 			}
+		case searchComplete:
+			b.executeSearchCallbacks(rawJson, jsonHashMap)
 		}
 		b.emit(command, rawJson)
+	}
+}
+
+// Forward search results to the requested callback when we find a match.  We
+// look to see if the query string in the results matches the query string with
+// our in-progress search slice.
+func (b *Bot) executeSearchCallbacks(rawJson []byte, jsonHashMap map[string]interface{}) {
+	var (
+		updatedSearches []Search
+		matched         bool
+	)
+
+	for _, clb := range b.currentSearches {
+		resultQuery := jsonHashMap["query"]
+		if clb.Query == resultQuery {
+			var payload SearchRes
+			_ = json.Unmarshal(rawJson, &payload)
+			SGo(func() { clb.Callback(payload) })
+			matched = true
+		} else {
+			// Not our search, so we'll keep it in our list
+			updatedSearches = append(updatedSearches, clb)
+		}
+	}
+
+	if matched {
+		b.currentSearches = updatedSearches
 	}
 }
 
@@ -301,6 +331,12 @@ type UnackMsg struct {
 	MsgID    int                  // Message ID sent to socket server
 	Payload  H                    // Payload that we sent to socket server
 	Callback func(rawJson []byte) // Callback to receive answer from socket server
+}
+
+// Search store any searches currently in progress
+type Search struct {
+	Query    string          // Query that was sent to search
+	Callback func(SearchRes) // Callback to receive search results
 }
 
 // Send a payload to the WS server
@@ -486,6 +522,18 @@ func txBaseErr(b *Bot, h H) error {
 }
 
 //-----------------------------------------------------------------------------
+
+func (b *Bot) search(query string, clb func(SearchRes)) (out SearchRes, err error) {
+	b.tx(H{"api": fileSearch, "query": query}, &out)
+	if out.Success {
+		cs := Search{
+			Query:    query,
+			Callback: clb,
+		}
+		b.currentSearches = append(b.currentSearches, cs)
+	}
+	return out, baseErr(out.BaseRes)
+}
 
 func (b *Bot) speak(msg string) error {
 	return txBaseErr(b, H{"api": roomSpeak, "roomid": b.roomID, "text": msg})
@@ -875,6 +923,11 @@ func (b *Bot) On(cmd string, clb func([]byte)) {
 // RoomRegister register in a room
 func (b *Bot) RoomRegister(roomID string) error {
 	return b.roomRegister(roomID)
+}
+
+// Search for a song
+func (b *Bot) Search(query string, clb func(SearchRes)) (SearchRes, error) {
+	return b.search(query, clb)
 }
 
 // Speak send a message in the public chat
