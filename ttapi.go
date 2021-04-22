@@ -234,26 +234,18 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 // look to see if the query string in the results matches the query string with
 // our in-progress search slice.
 func (b *Bot) executeSearchCallbacks(rawJson []byte, jsonHashMap map[string]interface{}) {
-	var (
-		updatedSearches []Search
-		matched         bool
-	)
-
-	for _, clb := range b.currentSearches {
-		resultQuery := jsonHashMap["query"]
-		if clb.Query == resultQuery {
-			var payload SearchRes
-			_ = json.Unmarshal(rawJson, &payload)
-			SGo(func() { clb.Callback(payload) })
-			matched = true
-		} else {
-			// Not our search, so we'll keep it in our list
-			updatedSearches = append(updatedSearches, clb)
+	for idx, search := range b.currentSearches {
+		if resultQuery, ok := jsonHashMap["query"].(string); ok {
+			if search.Query == resultQuery {
+				if search.Callback != nil {
+					var payload SearchRes
+					_ = json.Unmarshal(rawJson, &payload)
+					SGo(func() { search.Callback(payload) })
+				}
+				b.currentSearches = append(b.currentSearches[:idx], b.currentSearches[idx+1:]...) // remove element at idx
+				break
+			}
 		}
-	}
-
-	if matched {
-		b.currentSearches = updatedSearches
 	}
 }
 
@@ -523,16 +515,13 @@ func txBaseErr(b *Bot, h H) error {
 
 //-----------------------------------------------------------------------------
 
-func (b *Bot) search(query string, clb func(SearchRes)) (out SearchRes, err error) {
-	b.tx(H{"api": fileSearch, "query": query}, &out)
-	if out.Success {
-		cs := Search{
-			Query:    query,
-			Callback: clb,
-		}
-		b.currentSearches = append(b.currentSearches, cs)
+func (b *Bot) search(query string, clb func(SearchRes)) (err error) {
+	var res BaseRes
+	b.tx(H{"api": fileSearch, "query": query}, &res)
+	if res.Success {
+		b.currentSearches = append(b.currentSearches, Search{Query: query, Callback: clb})
 	}
-	return out, baseErr(out.BaseRes)
+	return baseErr(res)
 }
 
 func (b *Bot) speak(msg string) error {
@@ -926,7 +915,7 @@ func (b *Bot) RoomRegister(roomID string) error {
 }
 
 // Search for a song
-func (b *Bot) Search(query string, clb func(SearchRes)) (SearchRes, error) {
+func (b *Bot) Search(query string, clb func(SearchRes)) error {
 	return b.search(query, clb)
 }
 

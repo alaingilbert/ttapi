@@ -56,7 +56,7 @@ type IBot interface {
 	RoomDeregister() error
 	RoomInfo() (RoomInfoRes, error)
 	RoomRegister(roomID string) error
-	Search(query string, clb func(SearchRes)) (SearchRes, error)
+	Search(query string, clb func(SearchRes)) error
 	SetAvatar(avatarID int) error
 	Skip() error
 	Snag() error
