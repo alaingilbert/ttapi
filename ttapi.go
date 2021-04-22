@@ -33,11 +33,11 @@ type Bot struct {
 	msgID           int                      // keep track of message id used to communicate with ws server
 	clientID        string                   // random string
 	currentStatus   string                   // available/unavailable/away used for the chat
-	currentSearches []Search                 // Current searches in progress
 	lastHeartbeat   time.Time                // keep track of last heartbeat timestamp
 	lastActivity    time.Time                // keep track of last received message timestamp
 	ws              *websocket.Conn          // websocket connection to turntable
 	unackMsgs       []UnackMsg               // list of messages sent that are not acknowledged by the ws server
+	currentSearches []Search                 // Current searches in progress
 	callbacks       map[string][]interface{} // user defined callbacks set for each events
 	ctx             context.Context          // bot context
 	cancel          context.CancelFunc       // cancel function to stop bot
@@ -238,9 +238,7 @@ func (b *Bot) executeSearchCallbacks(rawJson []byte, jsonHashMap map[string]inte
 		if resultQuery, ok := jsonHashMap["query"].(string); ok {
 			if search.Query == resultQuery {
 				if search.Callback != nil {
-					var payload SearchRes
-					_ = json.Unmarshal(rawJson, &payload)
-					SGo(func() { search.Callback(payload) })
+					SGo(func() { search.Callback(rawJson) })
 				}
 				b.currentSearches = append(b.currentSearches[:idx], b.currentSearches[idx+1:]...) // remove element at idx
 				break
@@ -255,6 +253,8 @@ func (b *Bot) executeCallback(rawJson []byte, jsonHashMap map[string]interface{}
 	for idx, unackMsg := range b.unackMsgs {
 		if jid, ok := jsonHashMap["msgid"].(float64); ok {
 			if unackMsg.MsgID == int(jid) {
+
+				isSearch := false
 
 				// Extra logic for specific events
 				switch unackMsg.Payload["api"].(string) {
@@ -278,10 +278,17 @@ func (b *Bot) executeCallback(rawJson []byte, jsonHashMap map[string]interface{}
 				case roomInfo:
 					b.CurrentDjID = castStr(safeMapPath(jsonHashMap, "room.metadata.current_dj"))
 					b.CurrentSongID = castStr(safeMapPath(jsonHashMap, "room.metadata.current_song._id"))
+				case fileSearch:
+					if success, ok := jsonHashMap["success"].(bool); ok && success {
+						if query, ok := unackMsg.Payload["query"].(string); ok {
+							isSearch = true
+							b.currentSearches = append(b.currentSearches, Search{Query: query, Callback: unackMsg.Callback})
+						}
+					}
 				}
 
 				// Execute callback if provided
-				if unackMsg.Callback != nil {
+				if !isSearch && unackMsg.Callback != nil {
 					unackMsg.Callback(rawJson)
 				}
 
@@ -327,8 +334,8 @@ type UnackMsg struct {
 
 // Search store any searches currently in progress
 type Search struct {
-	Query    string          // Query that was sent to search
-	Callback func(SearchRes) // Callback to receive search results
+	Query    string               // Query that was sent to search
+	Callback func(rawJson []byte) // Callback to receive search results
 }
 
 // Send a payload to the WS server
@@ -515,13 +522,9 @@ func txBaseErr(b *Bot, h H) error {
 
 //-----------------------------------------------------------------------------
 
-func (b *Bot) search(query string, clb func(SearchRes)) (err error) {
-	var res BaseRes
-	b.tx(H{"api": fileSearch, "query": query}, &res)
-	if res.Success {
-		b.currentSearches = append(b.currentSearches, Search{Query: query, Callback: clb})
-	}
-	return baseErr(res)
+func (b *Bot) search(query string) (out SearchRes, err error) {
+	b.tx(H{"api": fileSearch, "query": query}, &out)
+	return out, baseErr(out.BaseRes)
 }
 
 func (b *Bot) speak(msg string) error {
@@ -915,8 +918,8 @@ func (b *Bot) RoomRegister(roomID string) error {
 }
 
 // Search for a song
-func (b *Bot) Search(query string, clb func(SearchRes)) error {
-	return b.search(query, clb)
+func (b *Bot) Search(query string) (SearchRes, error) {
+	return b.search(query)
 }
 
 // Speak send a message in the public chat
