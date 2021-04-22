@@ -224,7 +224,7 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 				}
 			}
 		case searchComplete:
-			b.executeSearchCallbacks(rawJson, jsonHashMap)
+			b.processSearchCompleteCommand(rawJson, jsonHashMap)
 		}
 		b.emit(command, rawJson)
 	}
@@ -233,7 +233,7 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 // Forward search results to the requested callback when we find a match.  We
 // look to see if the query string in the results matches the query string with
 // our in-progress search slice.
-func (b *Bot) executeSearchCallbacks(rawJson []byte, jsonHashMap map[string]interface{}) {
+func (b *Bot) processSearchCompleteCommand(rawJson []byte, jsonHashMap map[string]interface{}) {
 	for idx, search := range b.currentSearches {
 		if resultQuery, ok := jsonHashMap["query"].(string); ok {
 			if search.Query == resultQuery {
