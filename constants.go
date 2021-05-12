@@ -64,6 +64,7 @@ const (
 	userModify           = "user.modify"
 	userRemoveFan        = "user.remove_fan"
 	userSetAvatar        = "user.set_avatar"
+	userSetBot           = "user.set_bot"
 
 	// Valid statuses
 	available   = "available"
