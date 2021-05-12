@@ -554,6 +554,10 @@ func (b *Bot) setAvatar(avatarID int) error {
 	return txBaseErr(b, H{"api": userSetAvatar, "avatarid": avatarID})
 }
 
+func (b *Bot) setBot() error {
+	return txBaseErr(b, H{"api": userSetBot})
+}
+
 func (b *Bot) userAvailableAvatars() (out UserAvailableAvatarsRes, err error) {
 	b.tx(H{"api": userAvailableAvatars}, &out)
 	return out, baseErr(out.BaseRes)
@@ -950,6 +954,11 @@ func (b *Bot) ModifyLaptop(laptop string) error {
 // SetAvatar set your avatar
 func (b *Bot) SetAvatar(avatarID int) error {
 	return b.setAvatar(avatarID)
+}
+
+// SetBot makes your user a bot. WARNING: Once user is changed to a bot it cannot be undone!
+func (b *Bot) SetBot() error {
+	return b.setBot()
 }
 
 // UserAvailableAvatars get all available avatars
