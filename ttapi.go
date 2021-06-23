@@ -768,7 +768,7 @@ func (b *Bot) getPresence(userID string) (out GetPresenceRes, err error) {
 }
 
 func (b *Bot) stopSong() error {
-	return txBaseErr(b, H{"api": roomStopSong, "roomid": b.roomID})
+	return txBaseErr(b, H{"api": roomStopSong, "roomid": b.roomID, "djid": b.CurrentDjID, "songid": b.CurrentSongID})
 }
 
 func (b *Bot) skip() error {
