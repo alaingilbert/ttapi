@@ -232,6 +232,7 @@ type RoomInfoRes struct {
 		ID         string  `json:"_id"`
 		Avatarid   int     `json:"avatarid"`
 		Registered float64 `json:"registered"`
+		Bot        bool    `json:"bot"`
 	} `json:"users"`
 }
 
