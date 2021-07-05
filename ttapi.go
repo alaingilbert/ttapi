@@ -320,7 +320,7 @@ func (b *Bot) updatePresenceTask(interval float64) {
 			// loop until expected updates have been called
 			for c > 0 {
 				// wait interval
-				<-time.After(time.Duration(interval) * time.Second)
+				time.Sleep(time.Duration(interval) * time.Second)
 				_ = b.updatePresence()
 				// decrement counter and see if a run is still needed
 				c = atomic.AddInt32(&b.presenceTaskQueue, -1)
