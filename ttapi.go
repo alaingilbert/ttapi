@@ -66,7 +66,7 @@ func NewBot(auth, userID, roomID string) *Bot {
 	b.ctx, b.cancel = context.WithCancel(context.Background())
 	b.txCh = make(chan TxMsg, 10)
 	b.rxCh = make(chan RxMsg, 10)
-	b.presenceTaskStarted = false
+	b.presenceTaskStarted = 0
 	return b
 }
 
@@ -317,14 +317,12 @@ func (b *Bot) updatePresenceTask(interval float64) {
 	// Only let one of these be running at a time
 	if atomic.CompareAndSwapInt32(&b.presenceTaskStarted, 0, 1) {
 		SGo(func() {
-			defer func() {
-				atomic.StoreInt32(&b.presenceTaskStarted, 0)
-			}()
 			select {
 			case <-time.After(time.Duration(interval) * time.Second):
 			case <-b.ctx.Done():
 				return
 			}
+			atomic.StoreInt32(&b.presenceTaskStarted, 0)
 			_ = b.updatePresence()
 		})
 	}
