@@ -25,29 +25,29 @@ var lenRgx = regexp.MustCompile(`^~m~([0-9]+)~m~`)
 // To get the auth, user id and room id, you can use the following bookmarklet
 // http://alaingilbert.github.io/Turntable-API/bookmarklet.html
 type Bot struct {
-	auth                string                   // auth id, can be retrieved using bookmarklet
-	userID              string                   // user id, can be retrieved using bookmarklet
-	roomID              string                   // room id, can be retrieved using bookmarklet
-	client              string                   // web
-	laptop              string                   // mac
-	logWs               bool                     // either or not to log websocket messages
-	msgID               int                      // keep track of message id used to communicate with ws server
-	clientID            string                   // random string
-	currentStatus       string                   // available/unavailable/away used for the chat
-	lastHeartbeat       time.Time                // keep track of last heartbeat timestamp
-	lastActivity        time.Time                // keep track of last received message timestamp
-	ws                  *websocket.Conn          // websocket connection to turntable
-	unackMsgs           []UnackMsg               // list of messages sent that are not acknowledged by the ws server
-	currentSearches     []Search                 // Current searches in progress
-	callbacks           map[string][]interface{} // user defined callbacks set for each events
-	ctx                 context.Context          // bot context
-	cancel              context.CancelFunc       // cancel function to stop bot
-	CurrentSongID       string                   // cached current song id
-	CurrentDjID         string                   // cached current dj id
-	tmpSong             H                        // cached song fake message, used to emit our own fake event (endsong)
-	txCh                chan TxMsg               // messages to transmit to turntable
-	rxCh                chan RxMsg               // messages received from turntable
-	presenceTaskStarted int32                    // atomic value to tell if we are already responding to a presence update
+	auth                 string                   // auth id, can be retrieved using bookmarklet
+	userID               string                   // user id, can be retrieved using bookmarklet
+	roomID               string                   // room id, can be retrieved using bookmarklet
+	client               string                   // web
+	laptop               string                   // mac
+	logWs                bool                     // either or not to log websocket messages
+	msgID                int                      // keep track of message id used to communicate with ws server
+	clientID             string                   // random string
+	currentStatus        string                   // available/unavailable/away used for the chat
+	lastHeartbeat        time.Time                // keep track of last heartbeat timestamp
+	lastActivity         time.Time                // keep track of last received message timestamp
+	ws                   *websocket.Conn          // websocket connection to turntable
+	unackMsgs            []UnackMsg               // list of messages sent that are not acknowledged by the ws server
+	currentSearches      []Search                 // Current searches in progress
+	callbacks            map[string][]interface{} // user defined callbacks set for each events
+	ctx                  context.Context          // bot context
+	cancel               context.CancelFunc       // cancel function to stop bot
+	CurrentSongID        string                   // cached current song id
+	CurrentDjID          string                   // cached current dj id
+	tmpSong              H                        // cached song fake message, used to emit our own fake event (endsong)
+	txCh                 chan TxMsg               // messages to transmit to turntable
+	rxCh                 chan RxMsg               // messages received from turntable
+	presenceTaskInterval int32                    // atomic value to tell if we are already responding to a presence update
 }
 
 // NewBot creates a new bot
@@ -66,7 +66,7 @@ func NewBot(auth, userID, roomID string) *Bot {
 	b.ctx, b.cancel = context.WithCancel(context.Background())
 	b.txCh = make(chan TxMsg, 10)
 	b.rxCh = make(chan RxMsg, 10)
-	b.presenceTaskStarted = false
+	b.presenceTaskInterval = 10
 	return b
 }
 
@@ -79,6 +79,17 @@ func (b *Bot) startWS() {
 		return
 	}
 	b.readWS()
+}
+
+func (b *Bot) startPresence() {
+	for {
+		select {
+		case <-time.After(time.Duration(atomic.LoadInt32(&b.presenceTaskInterval)) * time.Second):
+			_ = b.updatePresence()
+		case <-b.ctx.Done():
+			return
+		}
+	}
 }
 
 func (b *Bot) readWS() {
@@ -314,20 +325,7 @@ func (b *Bot) setTmpSong(room map[string]interface{}) {
 }
 
 func (b *Bot) updatePresenceTask(interval float64) {
-	// Only let one of these be running at a time
-	if atomic.CompareAndSwapInt32(&b.presenceTaskStarted, 0, 1) {
-		SGo(func() {
-			defer func() {
-				atomic.StoreInt32(&b.presenceTaskStarted, 0)
-			}()
-			select {
-			case <-time.After(time.Duration(interval) * time.Second):
-			case <-b.ctx.Done():
-				return
-			}
-			_ = b.updatePresence()
-		})
-	}
+	atomic.StoreInt32(&b.presenceTaskInterval, int32(interval))
 }
 
 // Extract message length. eg: `~m~457~m~` -> 457
@@ -431,6 +429,7 @@ func (b *Bot) Stop() {
 // Start the bot
 func (b *Bot) Start() {
 	SGo(b.startWS)
+	SGo(b.startPresence)
 	for {
 		select {
 		case rxMsg := <-b.rxCh:
