@@ -315,16 +315,15 @@ func (b *Bot) setTmpSong(room map[string]interface{}) {
 
 func (b *Bot) updatePresenceTask(interval float64) {
 	// Only let one of these be running at a time
-	if newValue := atomic.AddInt32(&b.presenceTaskQueue, 1); newValue == 1 {
+	if c := atomic.AddInt32(&b.presenceTaskQueue, 1); c == 1 {
 		SGo(func() {
-			curValue := atomic.LoadInt32(&b.presenceTaskQueue)
 			// loop until expected updates have been called
-			for curValue > 0 {
+			for c > 0 {
 				// wait interval
 				<-time.After(time.Duration(interval) * time.Second)
 				_ = b.updatePresence()
 				// decrement counter and see if a run is still needed
-				curValue = atomic.AddInt32(&b.presenceTaskQueue, -1)
+				c = atomic.AddInt32(&b.presenceTaskQueue, -1)
 			}
 		})
 	}
