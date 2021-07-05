@@ -317,14 +317,10 @@ func (b *Bot) updatePresenceTask(interval float64) {
 	// Only let one of these be running at a time
 	if atomic.CompareAndSwapInt32(&b.presenceTaskStarted, 0, 1) {
 		SGo(func() {
-			defer func() {
+			SGo(func() {
+				<-time.After(time.Duration(interval) * time.Second)
 				atomic.StoreInt32(&b.presenceTaskStarted, 0)
-			}()
-			select {
-			case <-time.After(time.Duration(interval) * time.Second):
-			case <-b.ctx.Done():
-				return
-			}
+			})
 			_ = b.updatePresence()
 		})
 	}
