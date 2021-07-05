@@ -66,7 +66,7 @@ func NewBot(auth, userID, roomID string) *Bot {
 	b.ctx, b.cancel = context.WithCancel(context.Background())
 	b.txCh = make(chan TxMsg, 10)
 	b.rxCh = make(chan RxMsg, 10)
-	b.presenceTaskStarted = false
+	b.presenceTaskStarted = 0
 	return b
 }
 
