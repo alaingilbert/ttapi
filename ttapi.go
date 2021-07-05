@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -46,7 +47,7 @@ type Bot struct {
 	tmpSong             H                        // cached song fake message, used to emit our own fake event (endsong)
 	txCh                chan TxMsg               // messages to transmit to turntable
 	rxCh                chan RxMsg               // messages received from turntable
-	presenceTaskStarted bool                     // to tell if we are already responding to a presence update
+	presenceTaskStarted int32                    // atomic value to tell if we are already responding to a presence update
 }
 
 // NewBot creates a new bot
@@ -287,15 +288,12 @@ func (b *Bot) executeCallback(rawJson []byte, jsonHashMap map[string]interface{}
 						}
 					}
 				case presenceUpdate:
-					if success, ok := jsonHashMap["success"].(bool); ok && success {
-						if interval, ok := jsonHashMap["interval"].(float64); ok {
-							b.updatePresenceTask(interval)
-						} else {
-							b.updatePresenceTask(10.0)
-						}
-					} else {
-						b.updatePresenceTask(10.0)
+					success, ok1 := jsonHashMap["success"].(bool)
+					interval, ok2 := jsonHashMap["interval"].(float64)
+					if !ok1 || !ok2 || !success {
+						interval = 10.0
 					}
+					b.updatePresenceTask(interval)
 				}
 
 				// Execute callback if provided
@@ -317,15 +315,16 @@ func (b *Bot) setTmpSong(room map[string]interface{}) {
 
 func (b *Bot) updatePresenceTask(interval float64) {
 	// Only let one of these be running at a time
-	if !b.presenceTaskStarted {
-		b.presenceTaskStarted = true
+	if atomic.CompareAndSwapInt32(&b.presenceTaskStarted, 0, 1) {
 		SGo(func() {
+			defer func() {
+				atomic.StoreInt32(&b.presenceTaskStarted, 0)
+			}()
 			select {
 			case <-time.After(time.Duration(interval) * time.Second):
 			case <-b.ctx.Done():
 				return
 			}
-			b.presenceTaskStarted = false
 			_ = b.updatePresence()
 		})
 	}
