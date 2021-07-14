@@ -32,11 +32,22 @@ type RegisteredEvt struct {
 	Success bool `json:"success"`
 }
 
+// IBaseRes ...
+type IBaseRes interface {
+	SetError(error)
+}
+
 // BaseRes ...
 type BaseRes struct {
 	Msgid   int    `json:"msgid"`
 	Success bool   `json:"success"`
 	Err     string `json:"err"`
+}
+
+// SetError ...
+func (b *BaseRes) SetError(err error) {
+	b.Err = err.Error()
+	b.Success = false
 }
 
 // UserInfoRes ...
