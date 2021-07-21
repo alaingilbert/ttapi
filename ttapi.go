@@ -769,6 +769,7 @@ func (b *Bot) getPresence(userID string) (out GetPresenceRes, err error) {
 	if userID == "" {
 		userID = b.userID
 	}
+	b.tx(H{"api": presenceGet, "uid": userID}, &out)
 	return out, baseErr(out.BaseRes)
 }
 
