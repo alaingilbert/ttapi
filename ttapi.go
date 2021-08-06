@@ -283,7 +283,9 @@ func (b *Bot) executeCallback(rawJson []byte, jsonHashMap map[string]interface{}
 							if err := json.Unmarshal(roomInfoRaw, &roomInfo); err != nil {
 								logrus.Error(err)
 							}
-							b.setTmpSong(roomInfoHash)
+							if m, ok := roomInfoHash["room"].(map[string]interface{}); ok {
+								b.setTmpSong(m)
+							}
 							b.emit(roomChanged, roomInfo)
 						})
 					}
