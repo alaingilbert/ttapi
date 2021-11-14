@@ -516,6 +516,9 @@ func (b *Bot) emit(cmd string, data interface{}) {
 			} else {
 				if cmd == ready {
 					SGo(func() { clb.(func())() })
+				} else if cmd == timeout {
+					payload, _ := b.getTimeoutInfo()
+					SGo(func() { clb.(func(TimeoutEvt))(payload) })
 				}
 			}
 		}(clb)
@@ -524,6 +527,28 @@ func (b *Bot) emit(cmd string, data interface{}) {
 
 func (b *Bot) addCallback(cmd string, clb interface{}) {
 	b.callbacks[cmd] = append(b.callbacks[cmd], clb)
+}
+
+func (b *Bot) timeoutLoop(td time.Duration, clb interface{}) {
+	for {
+		te, err := b.getTimeoutInfo()
+
+		if err != nil {
+			logrus.Error("Error getting timeout info:", err)
+		}
+
+		logrus.WithFields(logrus.Fields{
+			"timeoutDuration": td,
+			"activityAge":     te.ActivityAge,
+			"lastActivity":    te.LastActivity,
+		}).Debug("Checking for timeout")
+
+		if te.ActivityAge > td {
+			b.emit(timeout, nil)
+		}
+
+		time.Sleep(td)
+	}
 }
 
 func baseErr(p BaseRes) error {
@@ -629,6 +654,16 @@ func (b *Bot) setStatus(status string) error {
 	}
 	b.currentStatus = status
 	return b.updatePresence()
+}
+
+func (b *Bot) getTimeoutInfo() (out TimeoutEvt, err error) {
+	out.LastHeartbeat = b.lastHeartbeat
+	out.LastActivity = b.lastActivity
+
+	out.HeartbeatAge = time.Now().Sub(out.LastHeartbeat)
+	out.ActivityAge = time.Now().Sub(out.LastActivity)
+
+	return out, err
 }
 
 func (b *Bot) bootUser(userID, reason string) error {
@@ -842,6 +877,13 @@ func (b *Bot) OnReady(clb func()) {
 	b.addCallback(ready, clb)
 }
 
+// OnTimeout triggered when activity timeout is reached
+func (b *Bot) OnTimeout(td time.Duration, clb func(TimeoutEvt)) {
+	b.addCallback(timeout, clb)
+	go b.timeoutLoop(td, clb)
+
+}
+
 // OnSpeak triggered when a message is received in the public chat
 func (b *Bot) OnSpeak(clb func(SpeakEvt)) {
 	b.addCallback(speak, clb)
@@ -999,6 +1041,11 @@ func (b *Bot) UserModify(h H) error {
 // SetStatus sets your current status
 func (b *Bot) SetStatus(status string) error {
 	return b.setStatus(status)
+}
+
+// LastActivity returns last server contact status
+func (b *Bot) GetTimeoutInfo() (TimeoutEvt, error) {
+	return b.getTimeoutInfo()
 }
 
 // BootUser kick a user out of the room

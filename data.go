@@ -1,5 +1,7 @@
 package ttapi
 
+import "time"
+
 // SpeakEvt struct received when someone speak in the public chat
 type SpeakEvt struct {
 	Command string
@@ -630,4 +632,12 @@ type NewModeratorEvt struct {
 	UserID  string `json:"userid"`
 	RoomID  string `json:"roomid"`
 	Success bool   `json:"success"`
+}
+
+// TimeoutEvt struct emitted when OnTimeout threshhold is reached
+type TimeoutEvt struct {
+	LastHeartbeat time.Time     `json:"lastHeartbeat"`
+	HeartbeatAge  time.Duration `json:"heartbeatAge"`
+	LastActivity  time.Time     `json:"lastActivity"`
+	ActivityAge   time.Duration `json:activityAge"`
 }

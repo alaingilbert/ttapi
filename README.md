@@ -39,6 +39,13 @@ func main() {
             _ = bot.Speakf("Hey! How are you @%s ?", evt.Name)
         }
     })
+
+    // callback if server stops responding after 5 minutes
+    timeoutDuration := time.Minute * 5)
+    bot.OnTimeout(timeoutDuration, func(evt ttapi.TimeoutEvt) { 
+        logrus.Fatal("Server unresponsive")
+    })
+
     bot.Start()
 }
 ```
