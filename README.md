@@ -41,7 +41,7 @@ func main() {
     })
 
     // callback if server stops responding after 5 minutes
-    timeoutDuration := time.Minute * 5)
+    timeoutDuration := time.Minute * 5
     bot.OnTimeout(timeoutDuration, func(evt ttapi.TimeoutEvt) { 
         logrus.Fatal("Server unresponsive")
     })
