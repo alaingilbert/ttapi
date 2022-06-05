@@ -61,7 +61,7 @@ type IBot interface {
 	Skip() error
 	Snag() error
 	Speak(msg string) error
-	Speakf(format string, args ...interface{}) error
+	Speakf(format string, args ...any) error
 	Start()
 	Stop()
 	StopSong() error

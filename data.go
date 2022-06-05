@@ -113,29 +113,29 @@ type PmmedEvt struct {
 	Command  string  `json:"command"`
 	Time     float64 `json:"time"`
 	Roomobj  struct {
-		Chatserver []interface{} `json:"chatserver"`
-		Name       string        `json:"name"`
-		Created    float64       `json:"created"`
-		Shortcut   string        `json:"shortcut"`
-		Roomid     string        `json:"roomid"`
+		Chatserver []any   `json:"chatserver"`
+		Name       string  `json:"name"`
+		Created    float64 `json:"created"`
+		Shortcut   string  `json:"shortcut"`
+		Roomid     string  `json:"roomid"`
 		Metadata   struct {
-			DjFull               bool          `json:"dj_full"`
-			Djs                  []interface{} `json:"djs"`
-			ScreenUploadsAllowed bool          `json:"screen_uploads_allowed"`
-			CurrentSong          interface{}   `json:"current_song"`
-			Privacy              string        `json:"privacy"`
-			MaxDjs               int           `json:"max_djs"`
-			Downvotes            int           `json:"downvotes"`
-			Userid               string        `json:"userid"`
-			Listeners            int           `json:"listeners"`
-			Featured             bool          `json:"featured"`
-			Djcount              int           `json:"djcount"`
-			CurrentDj            interface{}   `json:"current_dj"`
-			Djthreshold          int           `json:"djthreshold"`
-			ModeratorID          []string      `json:"moderator_id"`
-			Upvotes              int           `json:"upvotes"`
-			MaxSize              int           `json:"max_size"`
-			Votelog              []interface{} `json:"votelog"`
+			DjFull               bool     `json:"dj_full"`
+			Djs                  []any    `json:"djs"`
+			ScreenUploadsAllowed bool     `json:"screen_uploads_allowed"`
+			CurrentSong          any      `json:"current_song"`
+			Privacy              string   `json:"privacy"`
+			MaxDjs               int      `json:"max_djs"`
+			Downvotes            int      `json:"downvotes"`
+			Userid               string   `json:"userid"`
+			Listeners            int      `json:"listeners"`
+			Featured             bool     `json:"featured"`
+			Djcount              int      `json:"djcount"`
+			CurrentDj            any      `json:"current_dj"`
+			Djthreshold          int      `json:"djthreshold"`
+			ModeratorID          []string `json:"moderator_id"`
+			Upvotes              int      `json:"upvotes"`
+			MaxSize              int      `json:"max_size"`
+			Votelog              []any    `json:"votelog"`
 		} `json:"metadata"`
 	} `json:"roomobj"`
 }
@@ -144,11 +144,11 @@ type PmmedEvt struct {
 type RoomInfoRes struct {
 	BaseRes
 	Room struct {
-		Chatserver []interface{} `json:"chatserver"`
-		Name       string        `json:"name"`
-		Created    float64       `json:"created"`
-		Shortcut   string        `json:"shortcut"`
-		Roomid     string        `json:"roomid"`
+		Chatserver []any   `json:"chatserver"`
+		Name       string  `json:"name"`
+		Created    float64 `json:"created"`
+		Shortcut   string  `json:"shortcut"`
+		Roomid     string  `json:"roomid"`
 		Metadata   struct {
 			Songlog []struct {
 				Source   string  `json:"source"`
@@ -207,12 +207,12 @@ type RoomInfoRes struct {
 			Userid            string `json:"userid"`
 			Listeners         int    `json:"listeners"`
 			StickerPlacements struct {
-				Six04130Fb3F4Bfc001809D428 []interface{} `json:"604130fb3f4bfc001809d428"`
+				Six04130Fb3F4Bfc001809D428 []any `json:"604130fb3f4bfc001809d428"`
 			} `json:"sticker_placements"`
 			Screens struct {
-				Curtain interface{} `json:"curtain"`
-				Right   interface{} `json:"right"`
-				Left    interface{} `json:"left"`
+				Curtain any `json:"curtain"`
+				Right   any `json:"right"`
+				Left    any `json:"left"`
 			} `json:"screens"`
 			Featured    bool       `json:"featured"`
 			Djcount     int        `json:"djcount"`
@@ -253,11 +253,11 @@ type NewSongEvt struct {
 	Now     float64 `json:"now"`
 	Roomid  string  `json:"roomid"`
 	Room    struct {
-		Chatserver []interface{} `json:"chatserver"`
-		Name       string        `json:"name"`
-		Created    float64       `json:"created"`
-		Shortcut   string        `json:"shortcut"`
-		Roomid     string        `json:"roomid"`
+		Chatserver []any   `json:"chatserver"`
+		Name       string  `json:"name"`
+		Created    float64 `json:"created"`
+		Shortcut   string  `json:"shortcut"`
+		Roomid     string  `json:"roomid"`
 		Metadata   struct {
 			Songlog []struct {
 				Source   string  `json:"source"`
@@ -293,19 +293,19 @@ type NewSongEvt struct {
 					Artist   string `json:"artist"`
 				} `json:"metadata"`
 			} `json:"current_song"`
-			Privacy     string        `json:"privacy"`
-			MaxDjs      int           `json:"max_djs"`
-			Downvotes   int           `json:"downvotes"`
-			Userid      string        `json:"userid"`
-			Listeners   int           `json:"listeners"`
-			Featured    bool          `json:"featured"`
-			Djcount     int           `json:"djcount"`
-			CurrentDj   string        `json:"current_dj"`
-			Djthreshold int           `json:"djthreshold"`
-			ModeratorID []string      `json:"moderator_id"`
-			Upvotes     int           `json:"upvotes"`
-			MaxSize     int           `json:"max_size"`
-			Votelog     []interface{} `json:"votelog"`
+			Privacy     string   `json:"privacy"`
+			MaxDjs      int      `json:"max_djs"`
+			Downvotes   int      `json:"downvotes"`
+			Userid      string   `json:"userid"`
+			Listeners   int      `json:"listeners"`
+			Featured    bool     `json:"featured"`
+			Djcount     int      `json:"djcount"`
+			CurrentDj   string   `json:"current_dj"`
+			Djthreshold int      `json:"djthreshold"`
+			ModeratorID []string `json:"moderator_id"`
+			Upvotes     int      `json:"upvotes"`
+			MaxSize     int      `json:"max_size"`
+			Votelog     []any    `json:"votelog"`
 		} `json:"metadata"`
 	} `json:"room"`
 	Success bool `json:"success"`
@@ -453,7 +453,7 @@ type GetFavoritesRes struct {
 // DirectoryGraphRes ...
 type DirectoryGraphRes struct {
 	BaseRes
-	Rooms [][]interface{} `json:"rooms"`
+	Rooms [][]any `json:"rooms"`
 }
 
 // GetFansRes ...
@@ -527,22 +527,22 @@ type NoSongEvt struct {
 		NameLower string  `json:"name_lower"`
 		Roomid    string  `json:"roomid"`
 		Metadata  struct {
-			DjFull      bool          `json:"dj_full"`
-			Djs         []interface{} `json:"djs"`
-			Upvotes     int           `json:"upvotes"`
-			Privacy     string        `json:"privacy"`
-			MaxDjs      int           `json:"max_djs"`
-			Downvotes   int           `json:"downvotes"`
-			Random      float64       `json:"random"`
-			Userid      string        `json:"userid"`
-			Listeners   int           `json:"listeners"`
-			Djcount     int           `json:"djcount"`
-			MaxSize     int           `json:"max_size"`
-			Djthreshold int           `json:"djthreshold"`
-			ModeratorID []string      `json:"moderator_id"`
-			CurrentSong interface{}   `json:"current_song"`
-			CurrentDj   interface{}   `json:"current_dj"`
-			Votelog     []interface{} `json:"votelog"`
+			DjFull      bool     `json:"dj_full"`
+			Djs         []any    `json:"djs"`
+			Upvotes     int      `json:"upvotes"`
+			Privacy     string   `json:"privacy"`
+			MaxDjs      int      `json:"max_djs"`
+			Downvotes   int      `json:"downvotes"`
+			Random      float64  `json:"random"`
+			Userid      string   `json:"userid"`
+			Listeners   int      `json:"listeners"`
+			Djcount     int      `json:"djcount"`
+			MaxSize     int      `json:"max_size"`
+			Djthreshold int      `json:"djthreshold"`
+			ModeratorID []string `json:"moderator_id"`
+			CurrentSong any      `json:"current_song"`
+			CurrentDj   any      `json:"current_dj"`
+			Votelog     []any    `json:"votelog"`
 		} `json:"metadata"`
 	} `json:"room"`
 	Success bool `json:"success"`
@@ -552,12 +552,12 @@ type NoSongEvt struct {
 
 // BootedUserEvt ...
 type BootedUserEvt struct {
-	Success bool        `json:"success"`
-	Userid  string      `json:"userid"`
-	Reason  interface{} `json:"reason"`
-	Command string      `json:"command"`
-	Modid   string      `json:"modid"`
-	Roomid  string      `json:"roomid"`
+	Success bool   `json:"success"`
+	Userid  string `json:"userid"`
+	Reason  any    `json:"reason"`
+	Command string `json:"command"`
+	Modid   string `json:"modid"`
+	Roomid  string `json:"roomid"`
 }
 
 // {"command": "update_user", "userid": "604324f247c69b001e444a94", "roomid": "6041625e3f4bfc001c3a4ab3", "avatarid": 1}
@@ -593,9 +593,9 @@ type DjEvt struct {
 		Avatarid   int     `json:"avatarid"`
 		Registered float64 `json:"registered"`
 	} `json:"user"`
-	Roomid     string        `json:"roomid"`
-	Placements []interface{} `json:"placements"`
-	Modid      string        `json:"modid"`
+	Roomid     string `json:"roomid"`
+	Placements []any  `json:"placements"`
+	Modid      string `json:"modid"`
 }
 
 // AddDJEvt ...

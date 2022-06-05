@@ -12,7 +12,7 @@ import (
 )
 
 // H is a hashmap
-type H map[string]interface{}
+type H map[string]any
 
 // SGo stands for Safe Go or Shit Go depending how you feel about goroutine panic handling
 // Basically just a wrapper around the built-in keyword "go" with crash recovery
@@ -46,11 +46,11 @@ func GenerateToken() string {
 	return hex.EncodeToString(b)
 }
 
-func safeMapPath(m interface{}, path string) (out interface{}) {
+func safeMapPath(m any, path string) (out any) {
 	parts := strings.Split(path, ".")
 	tmp := m
 	for _, p := range parts {
-		if newMap, ok := tmp.(map[string]interface{}); ok {
+		if newMap, ok := tmp.(map[string]any); ok {
 			out = newMap[p]
 			tmp = out
 		} else {
@@ -60,7 +60,7 @@ func safeMapPath(m interface{}, path string) (out interface{}) {
 	return
 }
 
-func castStr(v interface{}) string {
+func castStr(v any) string {
 	if s, ok := v.(string); ok {
 		return s
 	}

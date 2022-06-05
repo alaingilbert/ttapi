@@ -7,8 +7,8 @@ import (
 )
 
 func TestSafeMapPath(t *testing.T) {
-	var m interface{}
-	m = map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": 123}}}
+	var m any
+	m = map[string]any{"a": map[string]any{"b": map[string]any{"c": 123}}}
 	assert.Equal(t, 123, safeMapPath(m, "a.b.c"))
 	assert.Nil(t, safeMapPath(m, "a.b.d"))
 	assert.Nil(t, safeMapPath(m, "a.c.d.e.f.g"))
