@@ -81,8 +81,6 @@ func (b *Bot) startWS() {
 }
 
 func (b *Bot) readWS() {
-	var msg []byte
-	var msgLen, msgRead int
 LOOP:
 	for {
 		select {
@@ -90,12 +88,11 @@ LOOP:
 			break LOOP
 		default:
 		}
-		var buf = make([]byte, 1024*1024)
+		var buf []byte
 		if err := b.ws.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
 			logrus.Error("failed to set read deadline:", err)
 		}
-		n, err := b.ws.Read(buf)
-		if err != nil {
+		if err := websocket.Message.Receive(b.ws, &buf); err != nil {
 			if err == io.EOF {
 				logrus.Error("socket eof:", err)
 				break
@@ -109,18 +106,7 @@ LOOP:
 				break
 			}
 		}
-		packet := buf[0:n]
-		if bytes.HasPrefix(packet, []byte("~m~")) {
-			m := lenRgx.FindSubmatch(packet)
-			msgLen, _ = strconv.Atoi(string(m[1]))
-			msgRead = -6 - len(m[1])
-			msg = make([]byte, 0)
-		}
-		msg = append(msg, packet...)
-		msgRead += n
-		if msgRead == msgLen {
-			b.rx(msg)
-		}
+		b.rx(buf)
 	}
 }
 
