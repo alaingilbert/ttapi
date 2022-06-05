@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -24,6 +25,7 @@ var lenRgx = regexp.MustCompile(`^~m~(\d+)~m~`)
 // To get the auth, user id and room id, you can use the following bookmarklet
 // http://alaingilbert.github.io/Turntable-API/bookmarklet.html
 type Bot struct {
+	started          int64              // Either or not the bot is started
 	auth             string             // auth id, can be retrieved using bookmarklet
 	userID           string             // user id, can be retrieved using bookmarklet
 	roomID           string             // room id, can be retrieved using bookmarklet
@@ -386,6 +388,11 @@ func (b *Bot) tx(payload H, res any) {
 		}
 		cancel()
 	}
+	if atomic.LoadInt64(&b.started) == 0 {
+		bb, _ := json.Marshal(BaseRes{Msgid: b.msgID, Success: false, Err: "bot not started"})
+		clb(bb)
+		return
+	}
 	b.txCh <- TxMsg{Payload: payload, Callback: clb}
 	select {
 	case <-ctx.Done():
@@ -404,11 +411,13 @@ func (b *Bot) rx(msg []byte) {
 
 // Stop the bot
 func (b *Bot) Stop() {
+	atomic.StoreInt64(&b.started, 0)
 	b.cancel()
 }
 
 // Start the bot
 func (b *Bot) Start() {
+	atomic.StoreInt64(&b.started, 1)
 	SGo(b.startWS)
 	for {
 		select {
