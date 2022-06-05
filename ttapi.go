@@ -1068,7 +1068,7 @@ func (b *Bot) VoteUp() error {
 	return b.voteUp()
 }
 
-// Bop alis to VoteUp
+// Bop alias to VoteUp
 func (b *Bot) Bop() error {
 	return b.bop()
 }
