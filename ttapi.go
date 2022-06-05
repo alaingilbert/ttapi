@@ -24,29 +24,29 @@ var lenRgx = regexp.MustCompile(`^~m~([0-9]+)~m~`)
 // To get the auth, user id and room id, you can use the following bookmarklet
 // http://alaingilbert.github.io/Turntable-API/bookmarklet.html
 type Bot struct {
-	auth             string                   // auth id, can be retrieved using bookmarklet
-	userID           string                   // user id, can be retrieved using bookmarklet
-	roomID           string                   // room id, can be retrieved using bookmarklet
-	client           string                   // web
-	laptop           string                   // mac
-	logWs            bool                     // either or not to log websocket messages
-	msgID            int                      // keep track of message id used to communicate with ws server
-	clientID         string                   // random string
-	presenceInterval time.Duration            // presence interval to keep socket alive
-	currentStatus    string                   // available/unavailable/away used for the chat
-	lastHeartbeat    time.Time                // keep track of last heartbeat timestamp
-	lastActivity     time.Time                // keep track of last received message timestamp
-	ws               *websocket.Conn          // websocket connection to turntable
-	unackMsgs        []UnackMsg               // list of messages sent that are not acknowledged by the ws server
-	currentSearches  []Search                 // Current searches in progress
-	callbacks        map[string][]interface{} // user defined callbacks set for each events
-	ctx              context.Context          // bot context
-	cancel           context.CancelFunc       // cancel function to stop bot
-	CurrentSongID    string                   // cached current song id
-	CurrentDjID      string                   // cached current dj id
-	tmpSong          H                        // cached song fake message, used to emit our own fake event (endsong)
-	txCh             chan TxMsg               // messages to transmit to turntable
-	rxCh             chan RxMsg               // messages received from turntable
+	auth             string             // auth id, can be retrieved using bookmarklet
+	userID           string             // user id, can be retrieved using bookmarklet
+	roomID           string             // room id, can be retrieved using bookmarklet
+	client           string             // web
+	laptop           string             // mac
+	logWs            bool               // either or not to log websocket messages
+	msgID            int                // keep track of message id used to communicate with ws server
+	clientID         string             // random string
+	presenceInterval time.Duration      // presence interval to keep socket alive
+	currentStatus    string             // available/unavailable/away used for the chat
+	lastHeartbeat    time.Time          // keep track of last heartbeat timestamp
+	lastActivity     time.Time          // keep track of last received message timestamp
+	ws               *websocket.Conn    // websocket connection to turntable
+	unackMsgs        []UnackMsg         // list of messages sent that are not acknowledged by the ws server
+	currentSearches  []Search           // Current searches in progress
+	callbacks        map[string][]any   // user defined callbacks set for each events
+	ctx              context.Context    // bot context
+	cancel           context.CancelFunc // cancel function to stop bot
+	CurrentSongID    string             // cached current song id
+	CurrentDjID      string             // cached current dj id
+	tmpSong          H                  // cached song fake message, used to emit our own fake event (endsong)
+	txCh             chan TxMsg         // messages to transmit to turntable
+	rxCh             chan RxMsg         // messages received from turntable
 }
 
 // NewBot creates a new bot
@@ -62,7 +62,7 @@ func NewBot(auth, userID, roomID string) *Bot {
 	b.lastActivity = time.Now()
 	b.clientID = strconv.FormatInt(time.Now().Unix(), 10) + "-" + strconv.FormatFloat(rand.Float64(), 'f', 17, 64)
 	b.presenceInterval = 10 * time.Second
-	b.callbacks = make(map[string][]interface{})
+	b.callbacks = make(map[string][]any)
 	b.ctx, b.cancel = context.WithCancel(context.Background())
 	b.txCh = make(chan TxMsg, 10)
 	b.rxCh = make(chan RxMsg, 10)
@@ -162,7 +162,7 @@ func (b *Bot) processMessage(msg []byte) {
 		return
 	}
 
-	var jsonHashMap map[string]interface{}
+	var jsonHashMap map[string]any
 	if err := json.Unmarshal(rawJson, &jsonHashMap); err != nil {
 		logrus.Error(err)
 		return
@@ -196,7 +196,7 @@ func (b *Bot) processHeartbeat(data []byte) {
 	SGo(func() { _ = b.updatePresence() })
 }
 
-func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{}) {
+func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]any) {
 	if command, ok := jsonHashMap["command"].(string); ok {
 		switch command {
 		case remDJ:
@@ -215,7 +215,7 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 			}
 			b.CurrentDjID = castStr(safeMapPath(jsonHashMap, "room.metadata.current_dj"))
 			b.CurrentSongID = castStr(safeMapPath(jsonHashMap, "room.metadata.current_song._id"))
-			if m, ok := jsonHashMap["room"].(map[string]interface{}); ok {
+			if m, ok := jsonHashMap["room"].(map[string]any); ok {
 				b.setTmpSong(m)
 			}
 		case updateVotes:
@@ -223,16 +223,16 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 				ups := safeMapPath(jsonHashMap, "room.metadata.upvotes")
 				downs := safeMapPath(jsonHashMap, "room.metadata.downvotes")
 				ls := safeMapPath(jsonHashMap, "room.metadata.listeners")
-				if _, ok := b.tmpSong["room"].(map[string]interface{}); ok {
-					if _, ok := b.tmpSong["room"].(map[string]interface{})["metadata"].(map[string]interface{}); ok {
-						b.tmpSong["room"].(map[string]interface{})["metadata"].(map[string]interface{})["upvotes"] = ups
-						b.tmpSong["room"].(map[string]interface{})["metadata"].(map[string]interface{})["downvotes"] = downs
-						b.tmpSong["room"].(map[string]interface{})["metadata"].(map[string]interface{})["listeners"] = ls
+				if _, ok := b.tmpSong["room"].(map[string]any); ok {
+					if _, ok := b.tmpSong["room"].(map[string]any)["metadata"].(map[string]any); ok {
+						b.tmpSong["room"].(map[string]any)["metadata"].(map[string]any)["upvotes"] = ups
+						b.tmpSong["room"].(map[string]any)["metadata"].(map[string]any)["downvotes"] = downs
+						b.tmpSong["room"].(map[string]any)["metadata"].(map[string]any)["listeners"] = ls
 					} else {
-						b.tmpSong["room"].(map[string]interface{})["metadata"] = map[string]interface{}{"upvotes": ups, "downvotes": downs, "listeners": ls}
+						b.tmpSong["room"].(map[string]any)["metadata"] = map[string]any{"upvotes": ups, "downvotes": downs, "listeners": ls}
 					}
 				} else {
-					b.tmpSong["room"] = map[string]interface{}{"metadata": map[string]interface{}{"upvotes": ups, "downvotes": downs, "listeners": ls}}
+					b.tmpSong["room"] = map[string]any{"metadata": map[string]any{"upvotes": ups, "downvotes": downs, "listeners": ls}}
 				}
 			}
 		case searchComplete:
@@ -245,7 +245,7 @@ func (b *Bot) processCommand(rawJson []byte, jsonHashMap map[string]interface{})
 // Forward search results to the requested callback when we find a match.  We
 // look to see if the query string in the results matches the query string with
 // our in-progress search slice.
-func (b *Bot) processSearchCompleteCommand(rawJson []byte, jsonHashMap map[string]interface{}) {
+func (b *Bot) processSearchCompleteCommand(rawJson []byte, jsonHashMap map[string]any) {
 	for idx, search := range b.currentSearches {
 		if resultQuery, ok := jsonHashMap["query"].(string); ok {
 			if search.Query == resultQuery {
@@ -261,7 +261,7 @@ func (b *Bot) processSearchCompleteCommand(rawJson []byte, jsonHashMap map[strin
 
 // Check all unack messages, if we received a response message from the socket server,
 // we will execute the callback if any was provided.
-func (b *Bot) executeCallback(rawJson []byte, jsonHashMap map[string]interface{}) {
+func (b *Bot) executeCallback(rawJson []byte, jsonHashMap map[string]any) {
 	for idx, unackMsg := range b.unackMsgs {
 		if jid, ok := jsonHashMap["msgid"].(float64); ok {
 			if unackMsg.MsgID == int(jid) {
@@ -283,7 +283,7 @@ func (b *Bot) executeCallback(rawJson []byte, jsonHashMap map[string]interface{}
 							if err := json.Unmarshal(roomInfoRaw, &roomInfo); err != nil {
 								logrus.Error(err)
 							}
-							if m, ok := roomInfoHash["room"].(map[string]interface{}); ok {
+							if m, ok := roomInfoHash["room"].(map[string]any); ok {
 								b.setTmpSong(m)
 							}
 							b.emit(roomChanged, roomInfo)
@@ -314,7 +314,7 @@ func (b *Bot) executeCallback(rawJson []byte, jsonHashMap map[string]interface{}
 	}
 }
 
-func (b *Bot) setTmpSong(room map[string]interface{}) {
+func (b *Bot) setTmpSong(room map[string]any) {
 	b.tmpSong = H{"command": endsong, "room": room, "success": true}
 }
 
@@ -387,7 +387,7 @@ type RxMsg struct {
 	Msg []byte
 }
 
-func (b *Bot) tx(payload H, res interface{}) {
+func (b *Bot) tx(payload H, res any) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	clb := func(rawJson []byte) {
 		switch v := res.(type) {
@@ -437,9 +437,9 @@ func (b *Bot) Start() {
 }
 
 // emit events to bot listeners
-func (b *Bot) emit(cmd string, data interface{}) {
+func (b *Bot) emit(cmd string, data any) {
 	for _, clb := range b.callbacks[cmd] {
-		func(clb interface{}) {
+		func(clb any) {
 			if dataBy, ok := data.([]byte); ok {
 				if clbBy, ok := clb.(func([]byte)); ok {
 					SGo(func() { clbBy(dataBy) })
@@ -522,7 +522,7 @@ func (b *Bot) emit(cmd string, data interface{}) {
 	}
 }
 
-func (b *Bot) addCallback(cmd string, clb interface{}) {
+func (b *Bot) addCallback(cmd string, clb any) {
 	b.callbacks[cmd] = append(b.callbacks[cmd], clb)
 }
 
@@ -550,7 +550,7 @@ func (b *Bot) speak(msg string) error {
 	return txBaseErr(b, H{"api": roomSpeak, "roomid": b.roomID, "text": msg})
 }
 
-func (b *Bot) speakf(format string, args ...interface{}) error {
+func (b *Bot) speakf(format string, args ...any) error {
 	return b.speak(fmt.Sprintf(format, args...))
 }
 
@@ -952,7 +952,7 @@ func (b *Bot) Speak(msg string) error {
 }
 
 // Speakf alias to Speak with formatted arguments
-func (b *Bot) Speakf(format string, args ...interface{}) error {
+func (b *Bot) Speakf(format string, args ...any) error {
 	return b.speakf(format, args...)
 }
 
