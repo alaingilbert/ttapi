@@ -17,8 +17,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var heartbeatRgx = regexp.MustCompile(`~m~[0-9]+~m~(~h~[0-9]+)`)
-var lenRgx = regexp.MustCompile(`^~m~([0-9]+)~m~`)
+var heartbeatRgx = regexp.MustCompile(`~m~\d+~m~(~h~\d+)`)
+var lenRgx = regexp.MustCompile(`^~m~(\d+)~m~`)
 
 // Bot is a thread safe client for turntable \o/
 // To get the auth, user id and room id, you can use the following bookmarklet
