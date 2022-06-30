@@ -85,4 +85,7 @@ const (
 	// Valid vote values
 	down = "down"
 	up   = "up"
+
+	// ttapi events
+	timeout = "ttapi_timeout"
 )
