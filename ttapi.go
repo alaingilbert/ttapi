@@ -79,6 +79,7 @@ func (b *Bot) startWS() {
 		logrus.Error("failed to dial websocket:", err)
 		return
 	}
+	defer b.ws.Close()
 	b.readWS()
 }
 
