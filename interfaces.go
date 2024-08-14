@@ -1,5 +1,7 @@
 package ttapi
 
+import "time"
+
 // IBot ...
 type IBot interface {
 	On(cmd string, clb func([]byte))
@@ -19,6 +21,7 @@ type IBot interface {
 	OnSnagged(func(SnaggedEvt))
 	OnSpeak(func(SpeakEvt))
 	OnReady(func())
+	OnTimeout(time.Duration, func(TimeoutEvt))
 	OnUpdateUser(func([]byte))
 	OnUpdateVotes(func(UpdateVotesEvt))
 
@@ -70,6 +73,7 @@ type IBot interface {
 	UserModify(H) error
 	VoteDown() error
 	VoteUp() error
+	GetTimeoutInfo() (TimeoutEvt, error)
 }
 
 // Compile time checks to ensure type satisfies IBot interface
