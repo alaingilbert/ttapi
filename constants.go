@@ -1,8 +1,8 @@
 package ttapi
 
 const (
-	wsOrigin   = "https://deepcut.fm"
-	wssURL     = "wss://chat1.deepcut.fm:8080/socket.io/websocket"
+	wsOrigin   = "https://deepcut.live"
+	wssURL     = "wss://chat1.deepcut.live:8080/socket.io/websocket"
 	wsProtocol = ""
 
 	bootedUser     = "booted_user"
