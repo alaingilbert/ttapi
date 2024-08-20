@@ -616,9 +616,7 @@ type EscortEvt struct {
 	DjEvt
 }
 
-// RemModeratorEvt ...
-// {"modid": "604173683f4bfc001c3a57d0", "roomid": "604064503f4bfc001be4c57b", "userid": "60b950ebb5178a0013a1e4a0", "command": "rem_moderator", "success": true}
-type RemModeratorEvt struct {
+type ModeratorEvt struct {
 	Command string `json:"command"`
 	UserID  string `json:"userid"`
 	RoomID  string `json:"roomid"`
@@ -626,12 +624,14 @@ type RemModeratorEvt struct {
 	Modid   string `json:"modid"`
 }
 
+// RemModeratorEvt ...
+// {"modid": "604173683f4bfc001c3a57d0", "roomid": "604064503f4bfc001be4c57b", "userid": "60b950ebb5178a0013a1e4a0", "command": "rem_moderator", "success": true}
+type RemModeratorEvt struct {
+	ModeratorEvt
+}
+
 // NewModeratorEvt ...
 // {"modid": "604173683f4bfc001c3a57d0", "roomid": "604064503f4bfc001be4c57b", "userid": "60b950ebb5178a0013a1e4a0", "command": "new_moderator", "success": true}
 type NewModeratorEvt struct {
-	Command string `json:"command"`
-	UserID  string `json:"userid"`
-	RoomID  string `json:"roomid"`
-	Success bool   `json:"success"`
-	Modid   string `json:"modid"`
+	ModeratorEvt
 }
