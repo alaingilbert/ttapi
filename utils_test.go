@@ -19,3 +19,10 @@ func TestTrunkStr(t *testing.T) {
 	assert.Equal(t, "some long string", truncStr("some long string", 100, "..."))
 	assert.Equal(t, "some long ...", truncStr("some long string", 10, "..."))
 }
+
+func TestOr(t *testing.T) {
+	assert.Equal(t, "default", Or("", "default"))
+	assert.Equal(t, "value", Or("value", "default"))
+	assert.Equal(t, 1, Or(0, 1))
+	assert.Equal(t, 2, Or(2, 1))
+}
