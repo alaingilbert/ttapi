@@ -714,17 +714,11 @@ func (b *Bot) voteDown() error {
 }
 
 func (b *Bot) addFavorite(roomID string) error {
-	if roomID == "" {
-		roomID = b.roomID
-	}
-	return txBaseErr(b, H{"api": roomAddFavorite, "roomid": roomID})
+	return txBaseErr(b, H{"api": roomAddFavorite, "roomid": Or(roomID, b.roomID)})
 }
 
 func (b *Bot) remFavorite(roomID string) error {
-	if roomID == "" {
-		roomID = b.roomID
-	}
-	return txBaseErr(b, H{"api": roomRemFavorite, "roomid": roomID})
+	return txBaseErr(b, H{"api": roomRemFavorite, "roomid": Or(roomID, b.roomID)})
 }
 
 func (b *Bot) getFavorites() (out GetFavoritesRes, err error) {
@@ -746,10 +740,7 @@ func (b *Bot) remDj(userID string) error {
 }
 
 func (b *Bot) getPresence(userID string) (out GetPresenceRes, err error) {
-	if userID == "" {
-		userID = b.userID
-	}
-	b.tx(H{"api": presenceGet, "uid": userID}, &out)
+	b.tx(H{"api": presenceGet, "uid": Or(userID, b.userID)}, &out)
 	return out, baseErr(out.BaseRes)
 }
 
