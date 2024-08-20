@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -98,10 +99,10 @@ LOOP:
 			if err == io.EOF {
 				logrus.Error("socket eof:", err)
 				break
+			} else if err, ok := err.(net.Error); ok && err.Timeout() {
+				continue
 			} else if strings.HasSuffix(err.Error(), "use of closed network connection") {
 				break
-			} else if strings.HasSuffix(err.Error(), "i/o timeout") {
-				continue
 			} else {
 				logrus.Error("socket unexpected error", err)
 				// connection reset by peer
