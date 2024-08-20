@@ -376,7 +376,7 @@ type RxMsg struct {
 }
 
 func (b *Bot) tx(payload H, res any) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(b.ctx, 5*time.Second)
 	clb := func(rawJson []byte) {
 		switch v := res.(type) {
 		case *[]byte:
@@ -394,14 +394,11 @@ func (b *Bot) tx(payload H, res any) {
 		return
 	}
 	b.txCh <- TxMsg{Payload: payload, Callback: clb}
-	select {
-	case <-ctx.Done():
-		if ctx.Err() == context.DeadlineExceeded {
-			if r, ok := res.(IBaseRes); ok {
-				r.SetError(ctx.Err())
-			}
+	<-ctx.Done()
+	if ctx.Err() == context.DeadlineExceeded {
+		if r, ok := res.(IBaseRes); ok {
+			r.SetError(ctx.Err())
 		}
-	case <-b.ctx.Done():
 	}
 }
 
