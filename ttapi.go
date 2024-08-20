@@ -431,10 +431,16 @@ func (b *Bot) Start() {
 	}
 }
 
-func execClb[T any](dataBy []byte, clb any) {
+func execClbPred[T any](dataBy []byte, clb any, predicate func(T) bool) {
 	var payload T
 	_ = json.Unmarshal(dataBy, &payload)
-	SGo(func() { clb.(func(T))(payload) })
+	if predicate == nil || predicate(payload) {
+		SGo(func() { clb.(func(T))(payload) })
+	}
+}
+
+func execClb[T any](dataBy []byte, clb any) {
+	execClbPred[T](dataBy, clb, nil)
 }
 
 // emit events to bot listeners
@@ -473,12 +479,8 @@ func (b *Bot) emit(cmd string, data any) {
 					case remModerator:
 						execClb[RemModeratorEvt](dataBy, clb)
 					case speak:
-						var payload SpeakEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						if payload.UserID == b.userID {
-							return
-						}
-						SGo(func() { clb.(func(SpeakEvt))(payload) })
+						pred := func(payload SpeakEvt) bool { return payload.UserID != b.userID }
+						execClbPred[SpeakEvt](dataBy, clb, pred)
 					}
 				}
 			} else if roomInfo, ok := data.(RoomInfoRes); ok {
