@@ -431,6 +431,12 @@ func (b *Bot) Start() {
 	}
 }
 
+func execClb[T any](dataBy []byte, clb any) {
+	var payload T
+	_ = json.Unmarshal(dataBy, &payload)
+	SGo(func() { clb.(func(T))(payload) })
+}
+
 // emit events to bot listeners
 func (b *Bot) emit(cmd string, data any) {
 	for _, clb := range b.callbacks[cmd] {
@@ -439,59 +445,34 @@ func (b *Bot) emit(cmd string, data any) {
 				if clbBy, ok := clb.(func([]byte)); ok {
 					SGo(func() { clbBy(dataBy) })
 				} else {
-					if cmd == registered {
-						var payload RegisteredEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(RegisteredEvt))(payload) })
-					} else if cmd == pmmed {
-						var payload PmmedEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(PmmedEvt))(payload) })
-					} else if cmd == newsong {
-						var payload NewSongEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(NewSongEvt))(payload) })
-					} else if cmd == nosong {
-						var payload NoSongEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(NoSongEvt))(payload) })
-					} else if cmd == snagged {
-						var payload SnaggedEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(SnaggedEvt))(payload) })
-					} else if cmd == bootedUser {
-						var payload BootedUserEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(BootedUserEvt))(payload) })
-					} else if cmd == updateVotes {
-						var payload UpdateVotesEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(UpdateVotesEvt))(payload) })
-					} else if cmd == deregistered {
-						var payload DeregisteredEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(DeregisteredEvt))(payload) })
-					} else if cmd == addDJ {
-						var payload AddDJEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(AddDJEvt))(payload) })
-					} else if cmd == remDJ {
-						var payload RemDJEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(RemDJEvt))(payload) })
-					} else if cmd == escort {
-						var payload EscortEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(EscortEvt))(payload) })
-					} else if cmd == newModerator {
-						var payload NewModeratorEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(NewModeratorEvt))(payload) })
-					} else if cmd == remModerator {
-						var payload RemModeratorEvt
-						_ = json.Unmarshal(dataBy, &payload)
-						SGo(func() { clb.(func(RemModeratorEvt))(payload) })
-					} else if cmd == speak {
+					switch cmd {
+					case registered:
+						execClb[RegisteredEvt](dataBy, clb)
+					case pmmed:
+						execClb[PmmedEvt](dataBy, clb)
+					case newsong:
+						execClb[NewSongEvt](dataBy, clb)
+					case nosong:
+						execClb[NoSongEvt](dataBy, clb)
+					case snagged:
+						execClb[SnaggedEvt](dataBy, clb)
+					case bootedUser:
+						execClb[BootedUserEvt](dataBy, clb)
+					case updateVotes:
+						execClb[UpdateVotesEvt](dataBy, clb)
+					case deregistered:
+						execClb[DeregisteredEvt](dataBy, clb)
+					case addDJ:
+						execClb[AddDJEvt](dataBy, clb)
+					case remDJ:
+						execClb[RemDJEvt](dataBy, clb)
+					case escort:
+						execClb[EscortEvt](dataBy, clb)
+					case newModerator:
+						execClb[NewModeratorEvt](dataBy, clb)
+					case remModerator:
+						execClb[RemModeratorEvt](dataBy, clb)
+					case speak:
 						var payload SpeakEvt
 						_ = json.Unmarshal(dataBy, &payload)
 						if payload.UserID == b.userID {
